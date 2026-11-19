@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Audit Log{% endblock %}
+{% block content %}
+<div class="breadcrumbs">
+  <span>Admin Portal</span>
+  <span class="sep">&gt;</span>
+  <strong>Audit</strong>
+</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
+    <div>
+      <h1 class="section-heading" style="margin-bottom:0.2rem;">Chronological audit log</h1>
+      <p style="font-size:0.84rem;color:var(--muted);">Append-only record of rules stages, decisions, notifications, and overrides.</p>
+    </div>
+    <span class="pill {% if chain_status.ok %}pill-approved{% else %}pill-rejected{% endif %}">
+      {% if chain_status.ok %}Chain verified ({{ chain_status.count }} entries){% else %}Chain mismatch at #{{ chain_status.broken_at }}{% endif %}
+    </span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Timestamp (UTC)</th>
+          <th>Actor</th>
+          <th>Role</th>
+          <th>Action</th>
+          <th>Target</th>
+          <th>From → To</th>
+          <th>Remark</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in logs %}
+        <tr>
+          <td>{{ row.id }}</td>
+          <td style="font-size:0.78rem;color:var(--muted);">{{ row.ts[:19].replace('T', ' ') }}</td>
+          <td><strong>{{ row.actor }}</strong></td>
+          <td>{{ row.role }}</td>
+          <td>{{ row.action }}</td>
+          <td>{{ row.target }} <span style="color:var(--muted);font-size:0.76rem;">{{ row.application_id or row.vendor_id or '' }}</span></td>
+          <td style="font-size:0.8rem;">{{ row.from_status or '—' }} → {{ row.to_status or '—' }}</td>
+          <td style="font-size:0.82rem;">{{ row.remark }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

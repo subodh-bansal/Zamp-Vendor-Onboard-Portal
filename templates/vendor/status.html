@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Application Status{% endblock %}
+{% block content %}
+<div class="breadcrumbs">
+  <span>Vendor Portal</span>
+  <span class="sep">&gt;</span>
+  <strong>Application status</strong>
+</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+    <div>
+      <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:0.35rem;">
+        Status:
+        {% if vendor.status == 'approved' %}
+          <span class="pill pill-approved">Approved</span>
+        {% elif vendor.status == 'rejected' %}
+          <span class="pill pill-rejected">Not approved</span>
+        {% elif vendor.status == 'pending' and vendor.substate == 'awaiting_vendor' %}
+          <span class="pill pill-pending">Action needed</span>
+        {% elif vendor.status == 'pending' %}
+          <span class="pill pill-review">Under review</span>
+        {% else %}
+          <span class="pill pill-draft">{{ vendor.status }}</span>
+        {% endif %}
+      </h1>
+      <p style="font-size:0.88rem;color:var(--muted);">{{ status_explanation }}</p>
+    </div>
+
+    <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+      {% if vendor.status == 'pending' and vendor.substate == 'awaiting_vendor' %}
+        <a href="/vendor/application" class="btn btn-primary">Resubmit application</a>
+      {% elif vendor.status == 'rejected' and can_start_new %}
+        <button type="button" class="btn btn-accent" onclick="startNewApplication()">Start a new application</button>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if fix_items %}
+<div class="card">
+  <h2 class="section-heading">What we still need</h2>
+  <p style="font-size:0.84rem;color:var(--muted);margin-bottom:0.85rem;">
+    Please resolve each item below and resubmit your application.
+  </p>
+  <div style="display:flex;flex-direction:column;gap:0.75rem;">
+    {% for item in fix_items %}
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;padding:0.85rem 1rem;border:1px solid var(--border);border-radius:10px;background:var(--card-subtle);">
+      <div>
+        <div style="font-weight:600;font-size:0.88rem;">{{ item.label }}</div>
+        <div style="font-size:0.84rem;color:var(--muted);margin-top:0.2rem;">{{ item.vendor_msg }}</div>
+      </div>
+      <a href="/vendor/application?step={{ item.target_step }}" class="btn btn-secondary btn-sm">Fix in Step {{ item.target_step }} →</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if vendor.status == 'rejected' and rejection_summary %}
+<div class="card">
+  <h2 class="section-heading">Decision note</h2>
+  <p style="font-size:0.88rem;">{{ rejection_summary }}</p>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2 class="section-heading">Submission rounds timeline</h2>
+  {% if rounds_history %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Application ID</th>
+          <th>Round</th>
+          <th>Outcome</th>
+          <th>Summary</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rounds_history %}
+        <tr>
+          <td><strong>{{ r.id }}</strong></td>
+          <td>Round {{ r.round }}</td>
+          <td><span class="pill pill-{{ r.substate or r.status }}">{{ r.substate or r.status }}</span></td>
+          <td style="font-size:0.82rem;color:var(--muted);">{{ r.vendor_summary }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p style="font-size:0.85rem;color:var(--muted);">No submitted rounds recorded yet.</p>
+  {% endif %}
+</div>
+
+<script>
+async function startNewApplication() {
+  const res = await fetch("/api/vendor/new-application", { method: "POST" });
+  if (res.ok) {
+    window.location.href = "/vendor/application";
+  }
+}
+</script>
+{% endblock %}

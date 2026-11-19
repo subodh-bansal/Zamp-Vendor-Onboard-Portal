@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 36" width="128" height="36" fill="none">
+  <rect x="2" y="4" width="28" height="28" rx="7" fill="#FFFFFF" fill-opacity="0.16" />
+  <!-- Two stacked, slanted bars forming a stylised Z mark -->
+  <polygon points="8,11 23,11 20,16 5,16" fill="#7DD3FC" />
+  <polygon points="12,20 27,20 24,25 9,25" fill="#FFFFFF" />
+  <text x="38" y="25" fill="#FFFFFF" font-family="Poppins, -apple-system, BlinkMacSystemFont, sans-serif" font-size="21" font-weight="700" letter-spacing="-0.03em">zamp</text>
+</svg>

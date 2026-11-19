@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Applications Queue{% endblock %}
+{% block content %}
+<div class="breadcrumbs">
+  <span>Admin Portal</span>
+  <span class="sep">&gt;</span>
+  <strong>Applications</strong>
+</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
+    <div>
+      <h1 class="section-heading" style="margin-bottom:0.2rem;">Onboarding applications</h1>
+      <p style="font-size:0.84rem;color:var(--muted);">Filter by review queue status, risk tier, or search by application ID, vendor name, GSTIN, or PAN.</p>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;border-bottom:1px solid var(--border);padding-bottom:0.75rem;">
+    <a href="/admin/applications?tab=all&tier={{ tier }}&q={{ q }}" class="btn btn-sm {% if active_tab == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
+    <a href="/admin/applications?tab=needs_review&tier={{ tier }}&q={{ q }}" class="btn btn-sm {% if active_tab == 'needs_review' %}btn-primary{% else %}btn-secondary{% endif %}">Needs review</a>
+    <a href="/admin/applications?tab=awaiting_vendor&tier={{ tier }}&q={{ q }}" class="btn btn-sm {% if active_tab == 'awaiting_vendor' %}btn-primary{% else %}btn-secondary{% endif %}">Awaiting vendor</a>
+    <a href="/admin/applications?tab=approved&tier={{ tier }}&q={{ q }}" class="btn btn-sm {% if active_tab == 'approved' %}btn-primary{% else %}btn-secondary{% endif %}">Approved</a>
+    <a href="/admin/applications?tab=rejected&tier={{ tier }}&q={{ q }}" class="btn btn-sm {% if active_tab == 'rejected' %}btn-primary{% else %}btn-secondary{% endif %}">Rejected</a>
+  </div>
+
+  <form method="get" action="/admin/applications" style="display:flex;gap:0.65rem;flex-wrap:wrap;margin-bottom:1rem;">
+    <input type="hidden" name="tab" value="{{ active_tab }}">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search App ID, Vendor, GSTIN, PAN..." class="input" style="max-width:300px;">
+    <select name="tier" class="input" style="max-width:170px;">
+      <option value="">All risk tiers</option>
+      <option value="Low" {% if tier == 'Low' %}selected{% endif %}>Low</option>
+      <option value="Medium" {% if tier == 'Medium' %}selected{% endif %}>Medium</option>
+      <option value="High" {% if tier == 'High' %}selected{% endif %}>High</option>
+    </select>
+    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+    {% if q or tier %}
+      <a href="/admin/applications?tab={{ active_tab }}" class="btn btn-secondary btn-sm">Clear</a>
+    {% endif %}
+  </form>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Application</th>
+          <th>Vendor</th>
+          <th>Round</th>
+          <th>Submitted (UTC)</th>
+          <th>Status</th>
+          <th>Risk</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in applications %}
+        <tr>
+          <td><strong>{{ a.id }}</strong>{% if a.escalated %} <span class="pill pill-high">Escalated</span>{% endif %}</td>
+          <td>
+            <a href="/admin/vendors/{{ a.vendor_id }}" class="details-link">{{ a.vendor_name }}</a>
+            <div style="font-size:0.75rem;color:var(--muted);">{{ a.vendor_id }}</div>
+          </td>
+          <td>Round {{ a.round }}</td>
+          <td style="font-size:0.82rem;color:var(--muted);">{{ a.submitted_display }}</td>
+          <td>
+            <span class="pill pill-{{ a.status }}">{{ a.status }}</span>
+            {% if a.substate %}
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:0.15rem;">{{ a.substate | replace('_', ' ') }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <span class="pill pill-{{ a.risk_tier | lower }}">{{ a.risk_tier }} ({{ a.risk_score }})</span>
+          </td>
+          <td>
+            <a href="/admin/applications/{{ a.id }}" class="details-link">Review &gt;</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align:center;color:var(--muted);padding:1.5rem;">No applications match the selected filters.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Welcome{% endblock %}
+{% block content %}
+<div style="max-width:980px;margin:1.5rem auto;">
+  <div class="card" style="padding:2.25rem;text-align:center;">
+    <span class="pill pill-review" style="margin-bottom:0.85rem;">Enterprise Procurement &amp; Risk Compliance</span>
+    <h1 style="font-size:1.85rem;font-weight:700;margin-bottom:0.65rem;">Onboard suppliers faster with transparent, deterministic checks</h1>
+    <p style="color:var(--muted);max-width:650px;margin:0 auto 1.75rem;">
+      Zamp.ai automates tax, banking, and document verification—giving vendors clear instructions on what to fix and procurement teams complete auditability.
+    </p>
+
+    <div class="form-grid-2" style="max-width:740px;margin:0 auto 1.5rem;text-align:left;">
+      <div class="card" style="margin:0;background:var(--card-subtle);">
+        <h2 class="section-heading">Vendor portal</h2>
+        <p style="font-size:0.86rem;color:var(--muted);margin-bottom:1.15rem;">
+          Submit your company profile, tax IDs, banking details, and compliance certificates in a guided 6-step application.
+        </p>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+          <a href="/login/vendor" class="btn btn-primary">Vendor login</a>
+          <a href="/register" class="btn btn-secondary">Create account</a>
+        </div>
+      </div>
+
+      <div class="card" style="margin:0;background:var(--card-subtle);">
+        <h2 class="section-heading">Admin &amp; compliance</h2>
+        <p style="font-size:0.86rem;color:var(--muted);margin-bottom:1.15rem;">
+          Review escalated applications, inspect exact vendor communications, enforce role-based approvals, and track supplier KPIs.
+        </p>
+        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+          <a href="/login/admin" class="btn btn-accent">Admin login</a>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size:0.84rem;color:var(--muted);">
+      New vendor? <a href="/register" style="font-weight:600;">Create a vendor account</a> to start onboarding in minutes.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2 class="section-heading">How onboarding works</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-top:0.5rem;">
+      <div class="kpi-tile">
+        <div class="kpi-label">Step 1</div>
+        <div style="font-weight:600;font-size:0.92rem;margin-bottom:0.25rem;">Create vendor account</div>
+        <p style="font-size:0.8rem;color:var(--muted);">Register your organization and sign in to your dedicated supplier workspace.</p>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-label">Step 2</div>
+        <div style="font-weight:600;font-size:0.92rem;margin-bottom:0.25rem;">Complete 6-step wizard</div>
+        <p style="font-size:0.8rem;color:var(--muted);">Provide company, tax, banking, product details, and upload compliance documents.</p>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-label">Step 3</div>
+        <div style="font-weight:600;font-size:0.92rem;margin-bottom:0.25rem;">Live automated checks</div>
+        <p style="font-size:0.8rem;color:var(--muted);">Our rules engine validates GSTIN, PAN, IFSC, name consistency, and risk signals live.</p>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-label">Step 4</div>
+        <div style="font-weight:600;font-size:0.92rem;margin-bottom:0.25rem;">Fix or get approved</div>
+        <p style="font-size:0.8rem;color:var(--muted);">Fix typos directly from clear feedback, or get reviewed and approved for orders.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

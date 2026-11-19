@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Create Vendor Account{% endblock %}
+{% block content %}
+<div style="max-width:480px;margin:1.75rem auto;">
+  <div class="card">
+    <h1 class="section-heading">Create vendor account</h1>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.15rem;">
+      Register your company to start your supplier onboarding application on Zamp.ai.
+    </p>
+
+    {% if error %}
+      <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/register">
+      <div class="form-group">
+        <label class="form-label" for="company_name">Company legal name</label>
+        <input class="form-control" type="text" id="company_name" name="company_name" value="{{ company_name or '' }}" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="contact_name">Primary contact name</label>
+        <input class="form-control" type="text" id="contact_name" name="contact_name" value="{{ contact_name or '' }}" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email">Work email</label>
+        <input class="form-control" type="email" id="email" name="email" value="{{ email or '' }}" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password (min 6 characters)</label>
+        <input class="form-control" type="password" id="password" name="password" minlength="6" required />
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:0.4rem;">Create account &amp; continue</button>
+    </form>
+
+    <div style="margin-top:1.1rem;font-size:0.84rem;text-align:center;">
+      Already registered? <a href="/login/vendor" style="font-weight:600;">Sign in here</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

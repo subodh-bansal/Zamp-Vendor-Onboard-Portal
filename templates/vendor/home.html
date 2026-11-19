@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Vendor Home{% endblock %}
+{% block content %}
+<div class="breadcrumbs">
+  <span>Vendor Portal</span>
+  <span class="sep">&gt;</span>
+  <strong>Home</strong>
+</div>
+
+<div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+  <div>
+    <div style="font-size:0.8rem;color:var(--muted);font-weight:600;margin-bottom:0.25rem;">
+      Welcome back, {{ current_user.display_name }} · Ref {{ vendor.vendor_id }}
+    </div>
+    <h1 style="font-size:1.45rem;font-weight:700;margin-bottom:0.35rem;">
+      Onboarding status:
+      {% if vendor.status == 'approved' %}
+        <span class="pill pill-approved">Approved</span>
+      {% elif vendor.status == 'rejected' %}
+        <span class="pill pill-rejected">Not approved</span>
+      {% elif vendor.status == 'pending' and vendor.substate == 'awaiting_vendor' %}
+        <span class="pill pill-pending">Action needed</span>
+      {% elif vendor.status == 'pending' %}
+        <span class="pill pill-review">Under review</span>
+      {% elif vendor.status == 'draft' %}
+        <span class="pill pill-draft">Draft</span>
+      {% else %}
+        <span class="pill pill-draft">Not started</span>
+      {% endif %}
+    </h1>
+    <p style="font-size:0.88rem;color:var(--muted);">{{ status_meaning }}</p>
+  </div>
+
+  <div>
+    <a href="{{ next_action_url }}" class="btn btn-primary">{{ next_action_label }}</a>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.25rem;">
+  <div class="card" style="margin:0;">
+    <h2 class="section-heading">Onboarding checklist</h2>
+    <ul style="list-style:none;display:flex;flex-direction:column;gap:0.65rem;font-size:0.86rem;">
+      {% for item in checklist %}
+      <li style="display:flex;justify-content:space-between;align-items:center;padding:0.45rem 0.6rem;background:var(--card-subtle);border-radius:8px;border:1px solid var(--border);">
+        <span>{{ item.label }}</span>
+        {% if item.done %}
+          <span class="pill pill-approved">Done</span>
+        {% else %}
+          <span class="pill pill-draft">Pending</span>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card" style="margin:0;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h2 class="section-heading">Recent messages</h2>
+      <a href="/vendor/messages" style="font-size:0.82rem;font-weight:600;margin-bottom:1rem;">Show history →</a>
+    </div>
+    {% if recent_messages %}
+      <div style="display:flex;flex-direction:column;gap:0.7rem;">
+        {% for msg in recent_messages %}
+        <div style="padding:0.65rem 0.75rem;border:1px solid var(--border);border-radius:8px;background:var(--card-subtle);">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;margin-bottom:0.25rem;">
+            <strong style="font-size:0.84rem;">{{ msg.subject }}</strong>
+            <span class="pill pill-{{ msg.outcome }}">{{ msg.outcome }}</span>
+          </div>
+          <div style="font-size:0.8rem;color:var(--muted);white-space:pre-line;">{{ msg.body[:140] }}{% if msg.body|length > 140 %}...{% endif %}</div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="font-size:0.85rem;color:var(--muted);">No messages sent yet. Once you submit your application, updates appear here.</p>
+    {% endif %}
+  </div>
+
+  <div class="card" style="margin:0;">
+    <h2 class="section-heading">Business information</h2>
+    <dl style="display:grid;grid-template-columns:125px 1fr;gap:0.5rem 0.75rem;font-size:0.84rem;">
+      <dt style="color:var(--muted);">Legal name</dt>
+      <dd style="font-weight:600;">{{ vendor.name or '—' }}</dd>
+      <dt style="color:var(--muted);">GSTIN</dt>
+      <dd>{{ vendor.gstin or 'Not provided yet' }}</dd>
+      <dt style="color:var(--muted);">PAN</dt>
+      <dd>{{ vendor.pan or 'Not provided yet' }}</dd>
+      <dt style="color:var(--muted);">Category</dt>
+      <dd>{{ vendor.category or 'Not set' }}</dd>
+      <dt style="color:var(--muted);">Location</dt>
+      <dd>{{ vendor.state or '—' }}</dd>
+      <dt style="color:var(--muted);">On portal since</dt>
+      <dd>{{ vendor.on_portal_since or '—' }}</dd>
+    </dl>
+  </div>
+</div>
+{% endblock %}

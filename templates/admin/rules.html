@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Rules & Scoring{% endblock %}
+{% block content %}
+<div class="breadcrumbs">
+  <span>Admin Portal</span>
+  <span class="sep">&gt;</span>
+  <strong>Rules &amp; scoring</strong>
+</div>
+
+<div class="card">
+  <h1 class="section-heading">Decision precedence &amp; risk tiers</h1>
+  <div class="form-grid-2" style="font-size:0.85rem;">
+    <div>
+      <strong>Decision order (highest priority first)</strong>
+      <ol style="padding-left:1.2rem;margin-top:0.4rem;color:var(--muted);">
+        {% for line in decision_order %}
+          <li style="margin-bottom:0.25rem;">{{ line }}</li>
+        {% endfor %}
+      </ol>
+    </div>
+    <div>
+      <strong>Risk score bands (capped at 100)</strong>
+      <ul style="list-style:none;margin-top:0.4rem;display:flex;flex-direction:column;gap:0.35rem;">
+        {% for t in tiers %}
+          <li><span class="pill pill-{{ t.tier | lower }}">{{ t.tier }}</span> {{ t.min }}–{{ t.max }} points</li>
+        {% endfor %}
+      </ul>
+      <div style="margin-top:0.75rem;">
+        <strong>Name similarity thresholds:</strong> pass ≥ {{ name_thresholds.pass_min }}, near-match ≥ {{ name_thresholds.near_match_min }}
+      </div>
+      <div style="margin-top:0.35rem;">
+        <strong>Sanctions watchlist:</strong> {{ watchlist | join(", ") }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="section-heading">Rule catalog (R1–R14)</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Rule</th>
+          <th>Stage</th>
+          <th>Check name</th>
+          <th>Default outcome</th>
+          <th>Points</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rules %}
+        <tr>
+          <td><strong>{{ r.id }}</strong></td>
+          <td>{{ r.stage }}</td>
+          <td>{{ r.label }}</td>
+          <td><span class="pill pill-{{ r.default_status }}">{{ r.default_status }}</span></td>
+          <td>+{{ r.points }}</td>
+          <td style="font-size:0.82rem;color:var(--muted);">{{ r.description }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

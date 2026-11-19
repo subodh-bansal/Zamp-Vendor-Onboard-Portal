@@ -1,0 +1,627 @@
+{% extends "base.html" %}
+{% block title %}My Application{% endblock %}
+{% block content %}
+<div class="breadcrumbs">
+  <span>Vendor Portal</span>
+  <span class="sep">&gt;</span>
+  <strong>My application</strong>
+</div>
+
+<div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+  <div>
+    <h1 style="font-size:1.35rem;font-weight:700;">Supplier onboarding application</h1>
+    <p style="font-size:0.84rem;color:var(--muted);">
+      Complete all 6 steps below. Drafts are saved automatically as you move between steps.
+    </p>
+  </div>
+  <div style="display:flex;gap:0.5rem;align-items:center;">
+    <span id="draftStatusBadge" class="pill pill-draft">Draft ready</span>
+    <button type="button" class="btn btn-secondary btn-sm" onclick="saveDraftNow()">Save draft</button>
+  </div>
+</div>
+
+{% if demo_mode %}
+<div class="card" style="background:var(--card-subtle);">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.65rem;">
+    <h2 class="section-heading" style="margin-bottom:0.25rem;">Demo sample helper (one-click fill + attach PNGs)</h2>
+    <a id="sampleZipLink" href="/api/demo/sample/nova.zip" class="btn btn-secondary btn-sm">Download sample documents (zip)</a>
+  </div>
+  <p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.7rem;">
+    Click a scenario chip below to populate form fields and automatically attach its sample PNG certificates. You can freely edit any field afterward.
+  </p>
+  <div id="scenarioChips" style="display:flex;flex-wrap:wrap;gap:0.45rem;"></div>
+</div>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:minmax(0,2.2fr) minmax(270px,1fr);gap:1.25rem;align-items:start;">
+  <div class="card" style="margin:0;">
+    <!-- 6-Step Stepper -->
+    <div class="stepper-box">
+      <div class="stepper-track" id="wizardStepper">
+        <div class="step-node current" data-step-idx="1"><div class="step-dot">1</div><div class="step-label">1 Company</div></div>
+        <div class="step-node" data-step-idx="2"><div class="step-dot">2</div><div class="step-label">2 Contact</div></div>
+        <div class="step-node" data-step-idx="3"><div class="step-dot">3</div><div class="step-label">3 Tax &amp; banking</div></div>
+        <div class="step-node" data-step-idx="4"><div class="step-dot">4</div><div class="step-label">4 Products &amp; services</div></div>
+        <div class="step-node" data-step-idx="5"><div class="step-dot">5</div><div class="step-label">5 Documents</div></div>
+        <div class="step-node" data-step-idx="6"><div class="step-dot">6</div><div class="step-label">6 Review &amp; agree</div></div>
+      </div>
+    </div>
+
+    <div id="wizardAlert" class="alert alert-error" style="display:none;"></div>
+
+    <form id="onboardingForm" onsubmit="submitApplication(event)">
+      <!-- Step 1: Company -->
+      <div class="wizard-panel" data-panel="1">
+        <h2 class="section-heading">Step 1: Company information</h2>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label" for="vendor_name">Legal name *</label>
+            <input class="form-control" type="text" id="vendor_name" name="vendor_name" required />
+            <span class="field-error" id="err-vendor_name"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="trading_name">Trading name (optional)</label>
+            <input class="form-control" type="text" id="trading_name" name="trading_name" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="company_type">Company type *</label>
+            <select class="form-control" id="company_type" name="company_type">
+              <option value="Private Ltd">Private Ltd</option>
+              <option value="LLP">LLP</option>
+              <option value="Proprietorship">Proprietorship</option>
+              <option value="Partnership">Partnership</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="registration_date">Registration / incorporation date *</label>
+            <input class="form-control" type="date" id="registration_date" name="registration_date" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="website">Website (optional)</label>
+            <input class="form-control" type="text" id="website" name="website" placeholder="https://example.com" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="employees">Number of employees (optional)</label>
+            <input class="form-control" type="number" id="employees" name="employees" min="1" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="street">Street address</label>
+            <input class="form-control" type="text" id="street" name="street" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="city">City *</label>
+            <input class="form-control" type="text" id="city" name="city" />
+            <span class="field-error" id="err-city"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="address_state">State *</label>
+            <select class="form-control" id="address_state" name="address_state">
+              <option value="">Select state</option>
+              <option value="Delhi">Delhi</option>
+              <option value="Gujarat">Gujarat</option>
+              <option value="Maharashtra">Maharashtra</option>
+              <option value="Karnataka">Karnataka</option>
+              <option value="Haryana">Haryana</option>
+              <option value="Tamil Nadu">Tamil Nadu</option>
+              <option value="Uttar Pradesh">Uttar Pradesh</option>
+            </select>
+            <span class="field-error" id="err-address_state"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="pin">PIN code *</label>
+            <input class="form-control" type="text" id="pin" name="pin" />
+            <span class="field-error" id="err-pin"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Contact -->
+      <div class="wizard-panel" data-panel="2" style="display:none;">
+        <h2 class="section-heading">Step 2: Contact information</h2>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label" for="contact_name">Primary contact name *</label>
+            <input class="form-control" type="text" id="contact_name" name="contact_name" />
+            <span class="field-error" id="err-contact_name"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="designation">Designation</label>
+            <input class="form-control" type="text" id="designation" name="designation" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="email">Primary email *</label>
+            <input class="form-control" type="email" id="email" name="email" />
+            <span class="field-error" id="err-email"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="phone">Phone number *</label>
+            <input class="form-control" type="text" id="phone" name="phone" />
+            <span class="field-error" id="err-phone"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="secondary_contact">Secondary contact (optional)</label>
+            <input class="form-control" type="text" id="secondary_contact" name="secondary_contact" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Tax & Banking -->
+      <div class="wizard-panel" data-panel="3" style="display:none;">
+        <h2 class="section-heading">Step 3: Tax, banking &amp; payment details</h2>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label" for="gstin">GSTIN (15 characters) *</label>
+            <input class="form-control" type="text" id="gstin" name="gstin" maxlength="15" style="text-transform:uppercase;" />
+            <span class="field-error" id="err-gstin"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="pan">PAN (10 characters) *</label>
+            <input class="form-control" type="text" id="pan" name="pan" maxlength="10" style="text-transform:uppercase;" />
+            <span class="field-error" id="err-pan"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="bank_name">Bank name *</label>
+            <input class="form-control" type="text" id="bank_name" name="bank_name" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="account_holder">Account holder name *</label>
+            <input class="form-control" type="text" id="account_holder" name="account_holder" />
+            <span class="field-error" id="err-account_holder"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="bank_account">Bank account number *</label>
+            <input class="form-control" type="text" id="bank_account" name="bank_account" />
+            <span class="field-error" id="err-bank_account"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ifsc">IFSC code (11 characters) *</label>
+            <input class="form-control" type="text" id="ifsc" name="ifsc" maxlength="11" style="text-transform:uppercase;" />
+            <span class="field-error" id="err-ifsc"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="payment_terms">Payment terms</label>
+            <select class="form-control" id="payment_terms" name="payment_terms">
+              <option value="Net 30">Net 30</option>
+              <option value="Net 45">Net 45</option>
+              <option value="Net 60">Net 60</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="preferred_payment_method">Preferred payment method</label>
+            <select class="form-control" id="preferred_payment_method" name="preferred_payment_method">
+              <option value="Bank transfer">Bank transfer</option>
+              <option value="UPI">UPI</option>
+              <option value="Cheque">Cheque</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="invoice_email">Invoice submission email</label>
+            <input class="form-control" type="email" id="invoice_email" name="invoice_email" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Products & Services -->
+      <div class="wizard-panel" data-panel="4" style="display:none;">
+        <h2 class="section-heading">Step 4: Products &amp; services</h2>
+        <div class="form-group">
+          <label class="form-label">Categories (select one or more) *</label>
+          <div style="display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:0.25rem;font-size:0.84rem;">
+            {% for cat in ["Industrial components", "Packaging", "Logistics", "Raw metals", "Electronics", "Textiles", "Office supplies", "Printing", "General"] %}
+            <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;">
+              <input type="checkbox" class="cat-checkbox" value="{{ cat }}" {% if loop.first %}checked{% endif %} />
+              <span>{{ cat }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          <input type="hidden" id="category" name="category" value="Industrial components" />
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label" for="lead_time_days">Typical delivery lead time (days) *</label>
+            <input class="form-control" type="number" id="lead_time_days" name="lead_time_days" value="7" min="1" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="quality_standards">Warranty / quality standards (optional)</label>
+            <input class="form-control" type="text" id="quality_standards" name="quality_standards" placeholder="e.g. ISO 9001, 12-month warranty" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="description">Short description of products or services *</label>
+          <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+        </div>
+      </div>
+
+      <!-- Step 5: Documents -->
+      <div class="wizard-panel" data-panel="5" style="display:none;">
+        <h2 class="section-heading">Step 5: Compliance documents</h2>
+        <p class="field-hint" style="margin-bottom:0.85rem;">
+          Accepted formats: PDF, JPG, PNG up to 5 MB per file. Drag and drop or choose a file.
+        </p>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label" for="gst_cert">GST registration certificate (Required)</label>
+            <input class="form-control" type="file" id="gst_cert" name="gst_cert" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" onchange="validateFileInput(this, 'err-gst_cert')" />
+            <span class="field-hint" id="attached-gst_cert">No file attached yet</span>
+            <span class="field-error" id="err-gst_cert"></span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="pan_card">PAN card (Required)</label>
+            <input class="form-control" type="file" id="pan_card" name="pan_card" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" onchange="validateFileInput(this, 'err-pan_card')" />
+            <span class="field-hint" id="attached-pan_card">No file attached yet</span>
+            <span class="field-error" id="err-pan_card"></span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="cancelled_cheque">Cancelled cheque (Required)</label>
+            <input class="form-control" type="file" id="cancelled_cheque" name="cancelled_cheque" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" onchange="validateFileInput(this, 'err-cancelled_cheque')" />
+            <span class="field-hint" id="attached-cancelled_cheque">No file attached yet</span>
+            <span class="field-error" id="err-cancelled_cheque"></span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="insurance_cert">Insurance certificate (Optional)</label>
+            <input class="form-control" type="file" id="insurance_cert" name="insurance_cert" accept=".pdf,.png,.jpg,.jpeg" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="safety_cert">Industry / safety / diversity cert (Optional)</label>
+            <input class="form-control" type="file" id="safety_cert" name="safety_cert" accept=".pdf,.png,.jpg,.jpeg" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="signatory_id">Authorised signatory ID (Sole proprietors, optional)</label>
+            <input class="form-control" type="file" id="signatory_id" name="signatory_id" accept=".pdf,.png,.jpg,.jpeg" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 6: Review & Agree -->
+      <div class="wizard-panel" data-panel="6" style="display:none;">
+        <h2 class="section-heading">Step 6: Review &amp; submit</h2>
+        <div id="reviewSummaryBox" style="padding:0.9rem 1rem;background:var(--card-subtle);border:1px solid var(--border);border-radius:10px;margin-bottom:1rem;font-size:0.84rem;"></div>
+
+        <div class="form-group">
+          <label class="form-label" for="reviewer_note">Explanation / clarification note (optional)</label>
+          <textarea class="form-control" id="reviewer_note" name="reviewer_note" rows="2" placeholder="Explain any trading name difference, bank update, or special context..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="support_needs">Support or training needs (optional)</label>
+          <input class="form-control" type="text" id="support_needs" name="support_needs" placeholder="e.g. Portal billing walkthrough" />
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1rem;font-size:0.84rem;">
+          <label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;">
+            <input type="checkbox" id="agree_coc" required />
+            <span>I agree to the Zamp.ai Vendor Code of Conduct.</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;">
+            <input type="checkbox" id="agree_sla" required />
+            <span>I accept the standard procurement terms and delivery SLA acknowledgement.</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:0.45rem;cursor:pointer;">
+            <input type="checkbox" id="agree_privacy" required />
+            <span>I provide consent for data processing required for supplier onboarding and compliance checks.</span>
+          </label>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);">
+        <button type="button" id="backStepBtn" class="btn btn-secondary" onclick="changeStep(-1)" disabled>← Back</button>
+        <div style="display:flex;gap:0.6rem;">
+          <button type="button" id="nextStepBtn" class="btn btn-accent" onclick="changeStep(1)">Next →</button>
+          <button type="submit" id="submitAppBtn" class="btn btn-primary" style="display:none;">Submit application</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Right-hand Written Guide Panel -->
+  <aside class="card" style="margin:0;">
+    <h2 class="section-heading">Onboarding guide</h2>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.85rem;">
+      Follow these tips so your application passes checks smoothly without unnecessary back-and-forth.
+    </p>
+    <div style="font-size:0.82rem;display:flex;flex-direction:column;gap:0.75rem;">
+      <div>
+        <strong>Accepted documents</strong>
+        <p style="color:var(--muted);">PDF, PNG, or JPG up to 5 MB each. Make sure text and numbers are clear and legible.</p>
+      </div>
+      <div>
+        <strong>Common mistakes to avoid</strong>
+        <ul style="padding-left:1.1rem;color:var(--muted);">
+          <li>GSTIN is 15 characters and PAN is 10 characters.</li>
+          <li>GSTIN state code should match your registered state.</li>
+          <li>Ensure your legal name matches across tax and bank records.</li>
+        </ul>
+      </div>
+      <div>
+        <strong>What statuses mean</strong>
+        <p style="color:var(--muted);">
+          <strong>Action needed:</strong> fix a clear typo or re-upload a file.<br/>
+          <strong>Under review:</strong> our team is verifying details.<br/>
+          <strong>Approved:</strong> onboarding complete.
+        </p>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+let currentStep = 1;
+const totalSteps = 6;
+const attachedFiles = {};
+
+function validateFileInput(inputEl, errId) {
+  const errEl = document.getElementById(errId);
+  const labelEl = document.getElementById("attached-" + inputEl.id);
+  if (errEl) errEl.textContent = "";
+  const file = inputEl.files && inputEl.files[0];
+  if (!file) return true;
+  const maxBytes = 5 * 1024 * 1024;
+  const allowedExt = [".pdf", ".png", ".jpg", ".jpeg"];
+  const lower = file.name.toLowerCase();
+  const okExt = allowedExt.some(ext => lower.endsWith(ext));
+  if (!okExt) {
+    if (errEl) errEl.textContent = "Please upload a PDF, JPG, or PNG file.";
+    return false;
+  }
+  if (file.size > maxBytes) {
+    if (errEl) errEl.textContent = "File is larger than 5 MB. Please choose a smaller file.";
+    return false;
+  }
+  if (labelEl) labelEl.textContent = "Selected: " + file.name;
+  return true;
+}
+
+function validateStep(stepNum) {
+  let ok = true;
+  const setErr = (id, msg) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = msg || "";
+    if (msg) ok = false;
+  };
+
+  if (stepNum === 1) {
+    setErr("err-vendor_name", document.getElementById("vendor_name").value.trim() ? "" : "Legal name is required.");
+    setErr("err-city", document.getElementById("city").value.trim() ? "" : "City is required.");
+    setErr("err-address_state", document.getElementById("address_state").value.trim() ? "" : "Please select a state.");
+    setErr("err-pin", document.getElementById("pin").value.trim() ? "" : "PIN code is required.");
+  } else if (stepNum === 2) {
+    setErr("err-contact_name", document.getElementById("contact_name").value.trim() ? "" : "Primary contact name is required.");
+    setErr("err-email", document.getElementById("email").value.trim() ? "" : "Email address is required.");
+    setErr("err-phone", document.getElementById("phone").value.trim() ? "" : "Phone number is required.");
+  } else if (stepNum === 3) {
+    const g = document.getElementById("gstin").value.trim();
+    const p = document.getElementById("pan").value.trim();
+    const a = document.getElementById("bank_account").value.trim();
+    const i = document.getElementById("ifsc").value.trim();
+    const h = document.getElementById("account_holder").value.trim();
+    setErr("err-gstin", g.length === 15 ? "" : `GSTIN must be 15 characters, you entered ${g.length}.`);
+    setErr("err-pan", p.length === 10 ? "" : `PAN must be 10 characters, you entered ${p.length}.`);
+    setErr("err-bank_account", a.length >= 6 ? "" : "Enter a valid bank account number.");
+    setErr("err-ifsc", i.length === 11 ? "" : `IFSC must be 11 characters, you entered ${i.length}.`);
+    setErr("err-account_holder", h ? "" : "Account holder name is required.");
+  }
+  return ok;
+}
+
+function renderStepUI() {
+  document.querySelectorAll(".wizard-panel").forEach(p => {
+    p.style.display = Number(p.dataset.panel) === currentStep ? "block" : "none";
+  });
+  document.querySelectorAll("#wizardStepper .step-node").forEach(node => {
+    const idx = Number(node.dataset.stepIdx);
+    node.classList.remove("completed", "current");
+    if (idx < currentStep) node.classList.add("completed");
+    else if (idx === currentStep) node.classList.add("current");
+  });
+  document.getElementById("backStepBtn").disabled = currentStep === 1;
+  document.getElementById("nextStepBtn").style.display = currentStep < totalSteps ? "inline-flex" : "none";
+  document.getElementById("submitAppBtn").style.display = currentStep === totalSteps ? "inline-flex" : "none";
+
+  if (currentStep === totalSteps) {
+    syncCategories();
+    const box = document.getElementById("reviewSummaryBox");
+    box.innerHTML = `
+      <strong>Company:</strong> ${escapeHtml(document.getElementById("vendor_name").value)} (${escapeHtml(document.getElementById("company_type").value)})<br/>
+      <strong>Location:</strong> ${escapeHtml(document.getElementById("city").value)}, ${escapeHtml(document.getElementById("address_state").value)}<br/>
+      <strong>GSTIN / PAN:</strong> ${escapeHtml(document.getElementById("gstin").value.toUpperCase())} / ${escapeHtml(document.getElementById("pan").value.toUpperCase())}<br/>
+      <strong>Bank &amp; IFSC:</strong> ${escapeHtml(document.getElementById("bank_account").value)} (${escapeHtml(document.getElementById("ifsc").value.toUpperCase())})<br/>
+      <strong>Category:</strong> ${escapeHtml(document.getElementById("category").value)}
+    `;
+  }
+}
+
+function escapeHtml(s) {
+  return String(s || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function syncCategories() {
+  const checked = Array.from(document.querySelectorAll(".cat-checkbox:checked")).map(el => el.value);
+  document.getElementById("category").value = checked.length ? checked.join(", ") : "General";
+}
+
+function changeStep(delta) {
+  if (delta > 0 && !validateStep(currentStep)) return;
+  saveDraftNow();
+  currentStep = Math.min(totalSteps, Math.max(1, currentStep + delta));
+  renderStepUI();
+}
+
+function collectDraftPayload() {
+  syncCategories();
+  return {
+    step: currentStep,
+    vendor_name: document.getElementById("vendor_name").value,
+    trading_name: document.getElementById("trading_name").value,
+    company_type: document.getElementById("company_type").value,
+    registration_date: document.getElementById("registration_date").value,
+    website: document.getElementById("website").value,
+    employees: document.getElementById("employees").value,
+    street: document.getElementById("street").value,
+    city: document.getElementById("city").value,
+    address_state: document.getElementById("address_state").value,
+    pin: document.getElementById("pin").value,
+    contact_name: document.getElementById("contact_name").value,
+    designation: document.getElementById("designation").value,
+    email: document.getElementById("email").value,
+    phone: document.getElementById("phone").value,
+    bank_name: document.getElementById("bank_name").value,
+    account_holder: document.getElementById("account_holder").value,
+    bank_account: document.getElementById("bank_account").value,
+    ifsc: document.getElementById("ifsc").value,
+    payment_terms: document.getElementById("payment_terms").value,
+    preferred_payment_method: document.getElementById("preferred_payment_method").value,
+    invoice_email: document.getElementById("invoice_email").value,
+    category: document.getElementById("category").value,
+    lead_time_days: document.getElementById("lead_time_days").value,
+    description: document.getElementById("description").value,
+    reviewer_note: document.getElementById("reviewer_note").value,
+  };
+}
+
+async function saveDraftNow() {
+  const payload = collectDraftPayload();
+  await fetch("/api/vendor/application", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const badge = document.getElementById("draftStatusBadge");
+  if (badge) badge.textContent = "Draft saved";
+}
+
+async function loadInitialDraft() {
+  const res = await fetch("/api/vendor/application");
+  if (!res.ok) return;
+  const data = await res.json();
+  const src = (data.draft && Object.keys(data.draft).length) ? data.draft : (data.latest_submission || {});
+  if (!src || !Object.keys(src).length) {
+    if (data.vendor && data.vendor.name) {
+      document.getElementById("vendor_name").value = data.vendor.name;
+    }
+    return;
+  }
+  for (const [k, v] of Object.entries(src)) {
+    const el = document.getElementById(k);
+    if (el && v !== undefined && v !== null) el.value = v;
+  }
+  if (src.step) currentStep = Number(src.step) || 1;
+  renderStepUI();
+}
+
+async function applyScenario(sc) {
+  document.getElementById("vendor_name").value = sc.vendor_name || "";
+  document.getElementById("trading_name").value = sc.trading_name || "";
+  document.getElementById("company_type").value = sc.company_type || "Private Ltd";
+  document.getElementById("registration_date").value = sc.registration_date || "2019-04-12";
+  document.getElementById("city").value = sc.city || "";
+  document.getElementById("address_state").value = sc.state || "";
+  document.getElementById("pin").value = sc.pin || "";
+  document.getElementById("contact_name").value = sc.contact_name || "";
+  document.getElementById("email").value = sc.email || "";
+  document.getElementById("phone").value = sc.phone || "";
+  document.getElementById("gstin").value = sc.gstin || "";
+  document.getElementById("pan").value = sc.pan || "";
+  document.getElementById("bank_name").value = sc.bank_name || "";
+  document.getElementById("bank_account").value = sc.bank_account || "";
+  document.getElementById("ifsc").value = sc.ifsc || "";
+  document.getElementById("account_holder").value = sc.account_holder || "";
+  document.getElementById("payment_terms").value = sc.payment_terms || "Net 30";
+  document.getElementById("preferred_payment_method").value = sc.payment_method || "Bank transfer";
+  document.getElementById("invoice_email").value = sc.invoice_email || "";
+  document.getElementById("category").value = sc.category || "General";
+  document.getElementById("lead_time_days").value = sc.lead_time_days || 7;
+  document.getElementById("description").value = sc.description || "";
+
+  const zipLink = document.getElementById("sampleZipLink");
+  if (zipLink) zipLink.href = `/api/demo/sample/${sc.key}.zip`;
+
+  for (const [docType, fname] of Object.entries(sc.docs || {})) {
+    const lbl = document.getElementById("attached-" + docType);
+    if (!fname) {
+      delete attachedFiles[docType];
+      if (lbl) lbl.textContent = "No file attached (intentionally omitted for scenario)";
+      continue;
+    }
+    const resp = await fetch(`/api/demo/sample/${sc.key}/${docType}.png`);
+    if (resp.ok) {
+      const blob = await resp.blob();
+      attachedFiles[docType] = new File([blob], fname, { type: "image/png" });
+      if (lbl) lbl.textContent = "Attached sample: " + fname;
+    }
+  }
+  await saveDraftNow();
+}
+
+async function initDemoChips() {
+  const container = document.getElementById("scenarioChips");
+  if (!container) return;
+  const res = await fetch("/api/demo/scenarios");
+  if (!res.ok) return;
+  const data = await res.json();
+  (data.scenarios || []).forEach(sc => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn btn-secondary btn-sm";
+    btn.textContent = sc.label;
+    btn.onclick = () => applyScenario(sc);
+    container.appendChild(btn);
+  });
+}
+
+async function submitApplication(ev) {
+  ev.preventDefault();
+  syncCategories();
+  const alertBox = document.getElementById("wizardAlert");
+  alertBox.style.display = "none";
+
+  const fd = new FormData();
+  const fields = [
+    "vendor_name", "trading_name", "company_type", "registration_date",
+    "email", "contact_name", "phone", "address_state", "city", "pin",
+    "gstin", "pan", "bank_name", "bank_account", "ifsc", "account_holder",
+    "payment_terms", "preferred_payment_method", "invoice_email",
+    "category", "description", "lead_time_days", "reviewer_note"
+  ];
+  fields.forEach(name => {
+    const el = document.getElementById(name);
+    if (el) fd.append(name, el.value);
+  });
+  fd.append("payment_method", document.getElementById("preferred_payment_method").value);
+
+  for (const dt of ["gst_cert", "pan_card", "cancelled_cheque"]) {
+    const inputEl = document.getElementById(dt);
+    if (inputEl && inputEl.files && inputEl.files[0]) {
+      fd.append(dt, inputEl.files[0]);
+    } else if (attachedFiles[dt]) {
+      fd.append(dt, attachedFiles[dt]);
+    }
+  }
+
+  const res = await fetch("/api/vendor/application/submit", {
+    method: "POST",
+    body: fd,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Submission failed." }));
+    alertBox.textContent = err.detail || "Could not submit application.";
+    alertBox.style.display = "block";
+    return;
+  }
+  const out = await res.json();
+  window.location.href = `/vendor/application/processing/${out.run_id}`;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderStepUI();
+  loadInitialDraft();
+  initDemoChips();
+});
+</script>
+{% endblock %}

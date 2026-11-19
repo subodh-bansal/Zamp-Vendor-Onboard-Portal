@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Messages Outbox{% endblock %}
+{% block content %}
+<div class="breadcrumbs">
+  <span>Admin Portal</span>
+  <span class="sep">&gt;</span>
+  <strong>Messages</strong>
+</div>
+
+<div class="alert alert-info">
+  Delivery is simulated; connect SMTP here (<code>send_email_stub</code> in <code>app.py</code>).
+</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
+    <h1 class="section-heading" style="margin-bottom:0;">Simulated messages sent to vendors</h1>
+    <form method="GET" action="/admin/messages" style="display:flex;gap:0.5rem;">
+      <select class="form-control" style="max-width:190px;" name="outcome">
+        <option value="">All outcomes</option>
+        <option value="received" {% if outcome == 'received' %}selected{% endif %}>Received</option>
+        <option value="awaiting_vendor" {% if outcome == 'awaiting_vendor' %}selected{% endif %}>Awaiting vendor</option>
+        <option value="awaiting_review" {% if outcome == 'awaiting_review' %}selected{% endif %}>Awaiting review</option>
+        <option value="approved" {% if outcome == 'approved' %}selected{% endif %}>Approved</option>
+        <option value="rejected" {% if outcome == 'rejected' %}selected{% endif %}>Rejected</option>
+      </select>
+      <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+    </form>
+  </div>
+
+  {% if messages %}
+  <div style="display:flex;flex-direction:column;gap:0.8rem;">
+    {% for m in messages %}
+    <div style="padding:0.9rem 1rem;border:1px solid var(--border);border-radius:10px;background:var(--card-subtle);">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.3rem;">
+        <strong>{{ m.subject }}</strong>
+        <span class="pill pill-{{ m.outcome }}">{{ m.outcome }}</span>
+      </div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.45rem;">
+        Vendor: {{ m.vendor_name }} ({{ m.vendor_id }}) · App: {{ m.application_id or '—' }} · Triggering checks: {{ m.check_ids }} · Delivery: {{ m.delivery }}
+      </div>
+      <div style="font-size:0.85rem;white-space:pre-line;">{{ m.body }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+    <p style="font-size:0.86rem;color:var(--muted);">No notifications match this filter.</p>
+  {% endif %}
+</div>
+{% endblock %}

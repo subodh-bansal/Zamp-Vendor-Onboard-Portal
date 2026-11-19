@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Demo Tools{% endblock %}
+{% block content %}
+<div class="breadcrumbs">
+  <span>Admin Portal</span>
+  <span class="sep">&gt;</span>
+  <strong>Demo tools</strong>
+</div>
+
+<div id="demoResetAlert" class="alert alert-success" style="display:none;"></div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
+    <div>
+      <h1 class="section-heading" style="margin-bottom:0.2rem;">Demo scenarios &amp; database reset</h1>
+      <p style="font-size:0.84rem;color:var(--muted);">
+        Download sample compliance certificate bundles or reset the SQLite database back to its clean seeded state.
+      </p>
+    </div>
+    <button type="button" class="btn btn-danger-outline" onclick="resetDemoDb()">Reset demo data</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Scenario</th>
+          <th>Expected outcome</th>
+          <th>Company &amp; tax IDs</th>
+          <th>Sample ZIP</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sc in scenarios %}
+        <tr>
+          <td><strong>{{ sc.label }}</strong></td>
+          <td>{{ sc.expected }}</td>
+          <td style="font-size:0.8rem;">{{ sc.vendor_name }} · GSTIN {{ sc.gstin }} · PAN {{ sc.pan }}</td>
+          <td><a href="/api/demo/sample/{{ sc.key }}.zip" class="details-link">Download ZIP &gt;</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+async function resetDemoDb() {
+  const res = await fetch("/api/demo/reset", { method: "POST" });
+  const box = document.getElementById("demoResetAlert");
+  if (res.ok) {
+    box.textContent = "Demo database and sample documents have been reset to their clean seeded state.";
+    box.style.display = "block";
+  } else {
+    box.className = "alert alert-error";
+    box.textContent = "Could not reset demo data.";
+    box.style.display = "block";
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Orders{% endblock %}
+{% block content %}
+<div class="breadcrumbs">
+  <span>Vendor Portal</span>
+  <span class="sep">&gt;</span>
+  <strong>Orders</strong>
+</div>
+
+<div class="card">
+  <h1 class="section-heading">Purchase orders</h1>
+  {% if vendor.status != 'approved' %}
+    <p style="font-size:0.86rem;color:var(--muted);">
+      Purchase orders are available once your vendor onboarding application is approved.
+    </p>
+  {% elif orders %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Created</th>
+          <th>Expected delivery</th>
+          <th>Delivered</th>
+          <th>Status</th>
+          <th>Total (INR)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        <tr>
+          <td><strong>{{ o.id }}</strong></td>
+          <td>{{ o.created }}</td>
+          <td>{{ o.expected_delivery }}</td>
+          <td>{{ o.delivered_date or '—' }}</td>
+          <td>
+            {% if o.status == 'Delivered' %}
+              <span class="pill pill-delivered">Delivered</span>
+            {% elif o.status == 'Delayed' %}
+              <span class="pill pill-delayed">Delayed</span>
+            {% elif o.status == 'Cancelled' %}
+              <span class="pill pill-cancelled">Cancelled</span>
+            {% else %}
+              <span class="pill pill-processing">{{ o.status }}</span>
+            {% endif %}
+          </td>
+          <td>₹ {{ "{:,}".format(o.total_inr) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p style="font-size:0.86rem;color:var(--muted);">No purchase orders recorded yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

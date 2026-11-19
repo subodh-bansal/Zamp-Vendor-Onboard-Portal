@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}My Documents{% endblock %}
+{% block content %}
+<div class="breadcrumbs">
+  <span>Vendor Portal</span>
+  <span class="sep">&gt;</span>
+  <strong>Documents</strong>
+</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
+    <div>
+      <h1 class="section-heading" style="margin-bottom:0.25rem;">Uploaded compliance documents</h1>
+      <p style="font-size:0.84rem;color:var(--muted);">Review document readability or replace a file and resubmit.</p>
+    </div>
+    <a href="/vendor/application?step=5" class="btn btn-primary btn-sm">Replace / upload in Step 5</a>
+  </div>
+
+  {% if docs %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Document type</th>
+          <th>Filename</th>
+          <th>Read status</th>
+          <th>Expiry</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in docs %}
+        <tr>
+          <td><strong>{{ d.doc_type.replace('_', ' ') | capitalize }}</strong></td>
+          <td>{{ d.filename }}</td>
+          <td>
+            {% if d.readable_status == 'Read' %}
+              <span class="pill pill-approved">Read</span>
+            {% elif d.readable_status == "Couldn't read" %}
+              <span class="pill pill-pending">Couldn't read</span>
+            {% else %}
+              <span class="pill pill-review">{{ d.readable_status }}</span>
+            {% endif %}
+          </td>
+          <td>{{ d.expiry_date or '—' }}</td>
+          <td><a href="/vendor/application?step=5" class="details-link">Replace &gt;</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p style="font-size:0.86rem;color:var(--muted);">No documents uploaded yet. Go to <a href="/vendor/application?step=5">Step 5 of your application</a> to attach files.</p>
+  {% endif %}
+</div>
+{% endblock %}

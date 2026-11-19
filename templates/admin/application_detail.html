@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block title %}Application {{ application.id }}{% endblock %}
+{% block content %}
+<div class="breadcrumbs">
+  <span>Admin Portal</span>
+  <span class="sep">&gt;</span>
+  <a href="/admin/applications">Applications</a>
+  <span class="sep">&gt;</span>
+  <strong>{{ application.id }}</strong>
+</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+    <div>
+      <div style="font-size:0.8rem;color:var(--muted);font-weight:600;">Application {{ application.id }} · Round {{ application.round }} · Vendor {{ vendor.vendor_id }}</div>
+      <h1 style="font-size:1.45rem;font-weight:700;margin-top:0.2rem;">
+        {{ submission.vendor_name or vendor.name }}
+        <span class="pill pill-{{ application.substate or application.status }}">{{ application.substate or application.status }}</span>
+        {% if application.escalated %}<span class="pill pill-high">Escalated</span>{% endif %}
+      </h1>
+    </div>
+
+    <div style="display:flex;gap:0.55rem;flex-wrap:wrap;align-items:center;">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="replayStoredStages()">▶ Live run replay</button>
+      <button type="button" class="btn btn-danger-outline" {% if not can_reject %}disabled{% endif %} onclick="focusOverride('rejected')">Reject</button>
+      <button type="button" class="btn btn-primary" {% if not can_approve %}disabled{% endif %} onclick="focusOverride('approved')">Approve</button>
+    </div>
+  </div>
+
+  <!-- Timeline Stepper -->
+  <div class="stepper-box" style="margin-top:1.1rem;margin-bottom:0;">
+    <div class="stepper-track">
+      <div class="step-node completed"><div class="step-dot">1</div><div class="step-label">Submitted</div></div>
+      <div class="step-node completed"><div class="step-dot">2</div><div class="step-label">Auto-checks</div></div>
+      <div class="step-node {% if application.substate == 'awaiting_vendor' %}current{% elif application.round > 1 %}completed{% endif %}"><div class="step-dot">3</div><div class="step-label">Vendor fixes</div></div>
+      <div class="step-node {% if application.substate == 'awaiting_review' %}current{% elif application.status in {'approved', 'rejected'} %}completed{% endif %}"><div class="step-dot">4</div><div class="step-label">Human review</div></div>
+      <div class="step-node {% if application.status in {'approved', 'rejected'} %}completed{% endif %}"><div class="step-dot">5</div><div class="step-label">Decision</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Replay Box (hidden unless replay clicked) -->
+<div id="replayCard" class="card" style="display:none;border-color:var(--accent);">
+  <h2 class="section-heading">Live run replay (stored pipeline stages)</h2>
+  <div id="replayLog" style="display:flex;flex-direction:column;gap:0.5rem;font-size:0.84rem;"></div>
+</div>
+
+<!-- 1. Summary -->
+<div class="card">
+  <h2 class="section-heading">1. Application summary</h2>
+  <div class="form-grid-2" style="font-size:0.85rem;">
+    <div>
+      <p><strong>Vendor name:</strong> {{ submission.vendor_name or vendor.name }}</p>
+      <p><strong>GSTIN / PAN:</strong> {{ submission.gstin or vendor.gstin or '—' }} / {{ submission.pan or vendor.pan or '—' }}</p>
+      <p><strong>State &amp; category:</strong> {{ submission.address_state or vendor.state or '—' }} · {{ submission.category or vendor.category or '—' }}</p>
+      <p><strong>Bank (masked):</strong> {{ bank_account_masked }} ({{ submission.ifsc or vendor.ifsc or '—' }})</p>
+    </div>
+    <div>
+      <p><strong>Round:</strong> Round {{ application.round }}</p>
+      <p><strong>Risk score &amp; tier:</strong> <span class="pill pill-{{ application.risk_tier | lower }}">{{ application.risk_score }} / 100 · {{ application.risk_tier }}</span></p>
+      <p><strong>Vendor note:</strong> {{ submission.reviewer_note or 'None provided' }}</p>
+      <p><strong>Vendor profile link:</strong> <a href="/admin/vendors/{{ vendor.vendor_id }}">{{ vendor.vendor_id }}</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Decision Explanation -->
+<div class="card">
+  <h2 class="section-heading">2. What the system decided and why (Decision explanation)</h2>
+  <p style="font-size:0.86rem;margin-bottom:0.85rem;">
+    <strong>Decision rule outcome:</strong> {{ decision_reason }}
+  </p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Stage</th>
+          <th>Rule</th>
+          <th>Check</th>
+          <th>Result</th>
+          <th>Points</th>
+          <th>Detail</th>
+          <th>Message shown to vendor</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in checks %}
+        <tr>
+          <td>{{ c.stage }}</td>
+          <td><strong>{{ c.rule_id }}</strong></td>
+          <td>{{ c.label }}</td>
+          <td><span class="pill pill-{{ c.status }}">{{ c.status }}</span></td>
+          <td><strong>+{{ c.points }}</strong></td>
+          <td style="font-size:0.8rem;color:var(--muted);">{{ c.detail }}</td>
+          <td style="font-size:0.8rem;">{{ c.vendor_msg or '—' }}</td>
+        </tr>
+        {% endfor %}
+        <tr style="background:var(--card-subtle);font-weight:700;">
+          <td colspan="4">Total risk score (capped at 100; Low 0-19, Medium 20-49, High 50-100)</td>
+          <td>{{ application.risk_score }} pts</td>
+          <td colspan="2">Tier: {{ application.risk_tier }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 3. Communication Sent to Vendor -->
+<div class="card">
+  <h2 class="section-heading">3. Communication sent to vendor</h2>
+  {% if notifications %}
+  <div style="display:flex;flex-direction:column;gap:0.75rem;">
+    {% for n in notifications %}
+    <div style="padding:0.85rem 1rem;border:1px solid var(--border);border-radius:10px;background:var(--card-subtle);">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.35rem;">
+        <strong>{{ n.subject }}</strong>
+        <span class="pill pill-{{ n.outcome }}">{{ n.outcome }}</span>
+      </div>
+      <div style="font-size:0.84rem;white-space:pre-line;">{{ n.body }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+    <p style="font-size:0.85rem;color:var(--muted);">No notifications recorded for this application.</p>
+  {% endif %}
+</div>
+
+<!-- 4. Recommended Action & Override Panel -->
+<div class="card">
+  <h2 class="section-heading">4. Recommended action &amp; decision override</h2>
+
+  {% if recommendations %}
+  <div class="alert alert-info" style="margin-bottom:1rem;">
+    <strong>Recommended staff guidance:</strong>
+    <ul style="padding-left:1.2rem;margin-top:0.3rem;">
+      {% for rec in recommendations %}
+        <li>{{ rec }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if override_blocked_reason %}
+    <div class="alert alert-error">{{ override_blocked_reason }}</div>
+  {% endif %}
+
+  <div id="overrideMsg" class="alert" style="display:none;"></div>
+
+  <form id="overrideForm" onsubmit="submitOverride(event)">
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label class="form-label" for="overrideDecision">Override decision</label>
+        <select class="form-control" id="overrideDecision" name="to_status">
+          <option value="approved" {% if not can_approve %}disabled{% endif %}>Approve application</option>
+          <option value="rejected" {% if not can_reject %}disabled{% endif %}>Reject application</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="overrideRemark">Mandatory remark (min 10 characters) *</label>
+        <input class="form-control" type="text" id="overrideRemark" name="remark" minlength="10" required placeholder="Explain reason for approval or rejection..." />
+      </div>
+    </div>
+    <button type="submit" id="overrideSubmitBtn" class="btn btn-primary" {% if not can_approve and not can_reject %}disabled{% endif %}>
+      Record decision &amp; notify vendor
+    </button>
+  </form>
+</div>
+
+<!-- 5. Documents & Audit Timeline -->
+<div class="form-grid-2">
+  <div class="card" style="margin:0;">
+    <h2 class="section-heading">5a. Uploaded documents</h2>
+    {% if documents %}
+    <ul style="list-style:none;display:flex;flex-direction:column;gap:0.55rem;font-size:0.84rem;">
+      {% for d in documents %}
+      <li style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0.7rem;border:1px solid var(--border);border-radius:8px;">
+        <span><strong>{{ d.doc_type }}</strong> — {{ d.filename }}</span>
+        <span class="pill pill-draft">{{ d.readable_status }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      <p style="font-size:0.84rem;color:var(--muted);">No new documents uploaded in this round.</p>
+    {% endif %}
+  </div>
+
+  <div class="card" style="margin:0;">
+    <h2 class="section-heading">5b. Application audit log</h2>
+    {% if audit_rows %}
+    <div style="display:flex;flex-direction:column;gap:0.5rem;font-size:0.82rem;">
+      {% for a in audit_rows %}
+      <div style="padding:0.5rem 0.7rem;border:1px solid var(--border);border-radius:8px;background:var(--card-subtle);">
+        <strong>{{ a.actor }}</strong> · <span>{{ a.action }}</span> ({{ a.from_status or '—' }} → {{ a.to_status or '—' }})<br/>
+        <span style="color:var(--muted);">{{ a.remark }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+      <p style="font-size:0.84rem;color:var(--muted);">No audit entries yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+const storedStages = {{ stages_json | tojson }};
+const appId = {{ application.id | tojson }};
+
+function focusOverride(targetStatus) {
+  const sel = document.getElementById("overrideDecision");
+  if (sel && !sel.querySelector(`option[value="${targetStatus}"]`).disabled) {
+    sel.value = targetStatus;
+  }
+  document.getElementById("overrideRemark").focus();
+}
+
+function replayStoredStages() {
+  const card = document.getElementById("replayCard");
+  const log = document.getElementById("replayLog");
+  card.style.display = "block";
+  log.innerHTML = "";
+  const stages = storedStages && storedStages.length ? storedStages : [{ stage: "decision", checks: [] }];
+  stages.forEach((st, idx) => {
+    setTimeout(() => {
+      const div = document.createElement("div");
+      div.className = "kpi-tile";
+      const chkSummary = (st.checks || []).map(c => `${c.rule_id} ${c.label} [${c.status}]`).join(", ") || "Stage completed";
+      div.innerHTML = `<strong>Stage ${idx + 1}: ${st.stage}</strong><div style="color:var(--muted);margin-top:0.2rem;">${chkSummary}</div>`;
+      log.appendChild(div);
+    }, idx * 450);
+  });
+}
+
+async function submitOverride(ev) {
+  ev.preventDefault();
+  const msgBox = document.getElementById("overrideMsg");
+  msgBox.style.display = "none";
+  const toStatus = document.getElementById("overrideDecision").value;
+  const remark = document.getElementById("overrideRemark").value.trim();
+
+  const res = await fetch(`/api/admin/applications/${appId}/override`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ to_status: toStatus, remark }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    msgBox.className = "alert alert-error";
+    msgBox.textContent = data.detail || "Could not apply override.";
+    msgBox.style.display = "block";
+    return;
+  }
+  msgBox.className = "alert alert-success";
+  msgBox.textContent = `Decision updated to '${toStatus}' and notification sent to vendor.`;
+  msgBox.style.display = "block";
+  setTimeout(() => window.location.reload(), 700);
+}
+</script>
+{% endblock %}

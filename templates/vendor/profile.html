@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Vendor Profile{% endblock %}
+{% block content %}
+<div class="breadcrumbs">
+  <span>Vendor Portal</span>
+  <span class="sep">&gt;</span>
+  <strong>Profile</strong>
+</div>
+
+{% if saved_msg %}
+  <div class="alert alert-success">{{ saved_msg }}</div>
+{% endif %}
+
+<div class="card">
+  <h1 class="section-heading">Company &amp; banking profile</h1>
+  <form method="POST" action="/vendor/profile">
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label class="form-label">Legal name</label>
+        <input class="form-control" type="text" name="name" value="{{ vendor.name or '' }}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Trading name</label>
+        <input class="form-control" type="text" name="trading_name" value="{{ vendor.trading_name or '' }}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Bank name</label>
+        <input class="form-control" type="text" name="bank_name" value="{{ vendor.bank_name or '' }}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Bank account number (visible to account owner)</label>
+        <input class="form-control" type="text" name="bank_account" value="{{ vendor.bank_account or '' }}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">IFSC code</label>
+        <input class="form-control" type="text" name="ifsc" value="{{ vendor.ifsc or '' }}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Invoice email</label>
+        <input class="form-control" type="email" name="invoice_email" value="{{ vendor.invoice_email or '' }}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Change password (optional)</label>
+        <input class="form-control" type="password" name="new_password" placeholder="Leave blank to keep current password" />
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Save profile</button>
+  </form>
+</div>
+{% endblock %}

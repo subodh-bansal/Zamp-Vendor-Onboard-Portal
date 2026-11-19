@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="breadcrumbs">
+  <span>Admin Portal</span>
+  <span class="sep">&gt;</span>
+  <strong>Dashboard</strong>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-tile">
+    <div class="kpi-label">Open reviews</div>
+    <div class="kpi-value-row"><span class="kpi-number">{{ kpis.open_reviews }}</span></div>
+  </div>
+  <div class="kpi-tile">
+    <div class="kpi-label">Awaiting vendor</div>
+    <div class="kpi-value-row"><span class="kpi-number">{{ kpis.awaiting_vendor }}</span></div>
+  </div>
+  <div class="kpi-tile">
+    <div class="kpi-label">Approved this month</div>
+    <div class="kpi-value-row"><span class="kpi-number">{{ kpis.approved_this_month }}</span><span class="trend-up">↑</span></div>
+  </div>
+  <div class="kpi-tile">
+    <div class="kpi-label">Rejection rate</div>
+    <div class="kpi-value-row"><span class="kpi-number">{{ kpis.rejection_rate }}%</span></div>
+  </div>
+  <div class="kpi-tile">
+    <div class="kpi-label">Avg time to decision</div>
+    <div class="kpi-value-row"><span class="kpi-number">{{ kpis.avg_decision_hours }}h</span></div>
+  </div>
+  <div class="kpi-tile">
+    <div class="kpi-label">High-risk count</div>
+    <div class="kpi-value-row"><span class="kpi-number">{{ kpis.high_risk_count }}</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+    <h2 class="section-heading">Needs your attention (oldest first)</h2>
+    <a href="/admin/applications?tab=needs_review" class="details-link">All review items &gt;</a>
+  </div>
+  {% if attention_items %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>App ID</th>
+          <th>Vendor</th>
+          <th>Round</th>
+          <th>Status / substate</th>
+          <th>Risk</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in attention_items %}
+        <tr>
+          <td><strong>{{ item.id }}</strong></td>
+          <td>{{ item.vendor_name }} <span style="color:var(--muted);font-size:0.78rem;">({{ item.vendor_id }})</span></td>
+          <td>Round {{ item.round }}</td>
+          <td><span class="pill pill-{{ item.substate or item.status }}">{{ item.substate or item.status }}</span></td>
+          <td><span class="pill pill-{{ item.risk_tier | lower }}">{{ item.risk_score }} · {{ item.risk_tier }}</span></td>
+          <td><a href="/admin/applications/{{ item.id }}" class="details-link">Open &gt;</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p style="font-size:0.86rem;color:var(--muted);">No pending items waiting in the human review queue.</p>
+  {% endif %}
+</div>
+
+<div class="form-grid-2">
+  <div class="card" style="margin:0;">
+    <h2 class="section-heading">Applications by status</h2>
+    <svg viewBox="0 0 360 150" width="100%" height="150" role="img" aria-label="Applications by status chart">
+      {% set statuses = [
+        ("Approved", status_counts.approved, "#17B457", 15),
+        ("Review", status_counts.awaiting_review, "#4B3FD1", 105),
+        ("Fix", status_counts.awaiting_vendor, "#E08A1E", 195),
+        ("Rejected", status_counts.rejected, "#D64545", 285)
+      ] %}
+      {% for lbl, cnt, col, x in statuses %}
+        {% set h = (cnt * 18) if (cnt * 18) < 95 else 95 %}
+        {% set y = 115 - h %}
+        <rect x="{{ x }}" y="{{ y }}" width="46" height="{{ h if h > 4 else 4 }}" rx="6" fill="{{ col }}" />
+        <text x="{{ x + 23 }}" y="{{ (y - 6) if y > 16 else 12 }}" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">{{ cnt }}</text>
+        <text x="{{ x + 23 }}" y="135" text-anchor="middle" font-size="11" fill="currentColor">{{ lbl }}</text>
+      {% endfor %}
+    </svg>
+  </div>
+
+  <div class="card" style="margin:0;">
+    <h2 class="section-heading">Risk tier distribution</h2>
+    <svg viewBox="0 0 360 150" width="100%" height="150" role="img" aria-label="Risk tier distribution chart">
+      {% set tiers = [
+        ("Low (0-19)", tier_counts.Low, "#17B457", 25),
+        ("Medium (20-49)", tier_counts.Medium, "#E08A1E", 145),
+        ("High (50-100)", tier_counts.High, "#D64545", 265)
+      ] %}
+      {% for lbl, cnt, col, x in tiers %}
+        {% set h = (cnt * 18) if (cnt * 18) < 95 else 95 %}
+        {% set y = 115 - h %}
+        <rect x="{{ x }}" y="{{ y }}" width="54" height="{{ h if h > 4 else 4 }}" rx="6" fill="{{ col }}" />
+        <text x="{{ x + 27 }}" y="{{ (y - 6) if y > 16 else 12 }}" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">{{ cnt }}</text>
+        <text x="{{ x + 27 }}" y="135" text-anchor="middle" font-size="11" fill="currentColor">{{ lbl }}</text>
+      {% endfor %}
+    </svg>
+  </div>
+</div>
+
+<div class="card" style="margin-top:1.25rem;">
+  <h2 class="section-heading">Recent activity</h2>
+  <div style="display:flex;flex-direction:column;gap:0.55rem;font-size:0.84rem;">
+    {% for log in recent_activity %}
+    <div style="display:flex;justify-content:space-between;gap:1rem;padding:0.5rem 0.7rem;background:var(--card-subtle);border-radius:8px;border:1px solid var(--border);flex-wrap:wrap;">
+      <div>
+        <strong>{{ log.actor }}</strong> ({{ log.role }}) · <span>{{ log.action }}</span> — <span style="color:var(--muted);">{{ log.remark }}</span>
+      </div>
+      <span style="font-size:0.76rem;color:var(--muted);">{{ log.ts[:19].replace('T', ' ') }} UTC</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}{{ vendor.name }} ({{ vendor.vendor_id }}){% endblock %}
+{% block content %}
+<div class="breadcrumbs">
+  <span>Admin Portal</span>
+  <span class="sep">&gt;</span>
+  <a href="/admin/vendors">Vendors</a>
+  <span class="sep">&gt;</span>
+  <strong>{{ vendor.vendor_id }}</strong>
+</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
+    <div>
+      <h1 class="section-heading" style="margin-bottom:0.2rem;">{{ vendor.name }}</h1>
+      <p style="font-size:0.84rem;color:var(--muted);">
+        {{ vendor.vendor_id }} · {{ vendor.category or 'General' }} · {{ vendor.state or 'India' }}
+      </p>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <span class="pill pill-{{ vendor.status }}">{{ vendor.status }}</span>
+      <span class="pill pill-{{ (vendor.risk_tier or 'Low') | lower }}">{{ vendor.risk_tier or 'Low' }} risk ({{ vendor.risk_score or 0 }})</span>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:0.5rem;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:0.75rem;margin-bottom:1rem;">
+    <a href="/admin/vendors/{{ vendor.vendor_id }}?tab=overview" class="btn btn-sm {% if active_tab == 'overview' %}btn-primary{% else %}btn-secondary{% endif %}">Overview</a>
+    <a href="/admin/vendors/{{ vendor.vendor_id }}?tab=applications" class="btn btn-sm {% if active_tab == 'applications' %}btn-primary{% else %}btn-secondary{% endif %}">Applications ({{ app_history | length }})</a>
+    <a href="/admin/vendors/{{ vendor.vendor_id }}?tab=orders" class="btn btn-sm {% if active_tab == 'orders' %}btn-primary{% else %}btn-secondary{% endif %}">Orders ({{ orders | length }})</a>
+    <a href="/admin/vendors/{{ vendor.vendor_id }}?tab=documents" class="btn btn-sm {% if active_tab == 'documents' %}btn-primary{% else %}btn-secondary{% endif %}">Documents ({{ documents | length }})</a>
+    <a href="/admin/vendors/{{ vendor.vendor_id }}?tab=messages" class="btn btn-sm {% if active_tab == 'messages' %}btn-primary{% else %}btn-secondary{% endif %}">Messages ({{ messages | length }})</a>
+    <a href="/admin/vendors/{{ vendor.vendor_id }}?tab=audit" class="btn btn-sm {% if active_tab == 'audit' %}btn-primary{% else %}btn-secondary{% endif %}">Audit log ({{ audit_rows | length }})</a>
+  </div>
+
+  {% if active_tab == 'overview' %}
+    <div class="kpi-grid">
+      <div class="kpi-tile"><div class="kpi-label">Closed deals</div><div class="kpi-number">{{ perf.metrics.closed_deals.value }}</div></div>
+      <div class="kpi-tile"><div class="kpi-label">On-time shipping</div><div class="kpi-number">{{ perf.metrics.on_time_shipping.value }}%</div></div>
+      <div class="kpi-tile"><div class="kpi-label">Defect rate</div><div class="kpi-number">{{ perf.metrics.defect_rate.value }}%</div></div>
+      <div class="kpi-tile"><div class="kpi-label">Open orders</div><div class="kpi-number">{{ perf.open_orders | length }}</div></div>
+    </div>
+
+    <div class="form-grid-2" style="font-size:0.86rem;">
+      <div>
+        <h3 class="section-heading">Entity &amp; tax details</h3>
+        <p><strong>Legal name:</strong> {{ vendor.name }}</p>
+        <p><strong>Trading name:</strong> {{ vendor.trading_name or '—' }}</p>
+        <p><strong>GSTIN:</strong> {{ vendor.gstin or '—' }}</p>
+        <p><strong>PAN:</strong> {{ vendor.pan or '—' }}</p>
+        <p><strong>State:</strong> {{ vendor.state or '—' }}</p>
+        <p><strong>Primary contact:</strong> {{ contact.primary_name or '—' }} ({{ vendor.email }})</p>
+      </div>
+      <div>
+        <h3 class="section-heading">Banking &amp; settlement</h3>
+        <p><strong>Bank name:</strong> {{ vendor.bank_name or '—' }}</p>
+        <p><strong>Account holder:</strong> {{ vendor.account_holder or '—' }}</p>
+        <p><strong>Account number:</strong> {{ bank_account_masked or '—' }}</p>
+        <p><strong>IFSC:</strong> {{ vendor.ifsc or '—' }}</p>
+        <p><strong>Payment terms:</strong> {{ vendor.payment_terms or 'Net 30' }}</p>
+        <p><strong>Invoice email:</strong> {{ vendor.invoice_email or vendor.email }}</p>
+      </div>
+    </div>
+
+  {% elif active_tab == 'applications' %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>App ID</th><th>Round</th><th>Status</th><th>Risk</th><th>Summary</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          {% for a in app_history %}
+          <tr>
+            <td><strong>{{ a.id }}</strong></td>
+            <td>Round {{ a.round }}</td>
+            <td><span class="pill pill-{{ a.status }}">{{ a.status }}</span></td>
+            <td><span class="pill pill-{{ a.risk_tier | lower }}">{{ a.risk_tier }} ({{ a.risk_score }})</span></td>
+            <td style="font-size:0.82rem;color:var(--muted);">{{ a.reason }}</td>
+            <td><a href="/admin/applications/{{ a.id }}" class="details-link">Inspect &gt;</a></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1.25rem;">No applications submitted yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  {% elif active_tab == 'orders' %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>PO Number</th><th>Item</th><th>Amount</th><th>Status</th><th>Created</th></tr>
+        </thead>
+        <tbody>
+          {% for o in orders %}
+          <tr>
+            <td><strong>{{ o.po_number or o.id }}</strong></td>
+            <td>{{ o.item or o.description or 'Purchase order' }}</td>
+            <td>₹ {{ "{:,.0f}".format(o.amount or 0) }}</td>
+            <td><span class="pill pill-{{ o.status }}">{{ o.status }}</span></td>
+            <td style="font-size:0.82rem;color:var(--muted);">{{ o.created }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.25rem;">No purchase orders recorded for this vendor.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  {% elif active_tab == 'documents' %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Doc ID</th><th>Type</th><th>Filename</th><th>OCR / Read Status</th><th>Expiry</th></tr>
+        </thead>
+        <tbody>
+          {% for d in documents %}
+          <tr>
+            <td><strong>{{ d.id }}</strong></td>
+            <td>{{ d.doc_type }}</td>
+            <td>{{ d.filename }}</td>
+            <td>{{ d.readable_status }}</td>
+            <td>{{ d.expiry_date or '—' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.25rem;">No documents uploaded yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  {% elif active_tab == 'messages' %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Outcome</th><th>Subject</th><th>Body</th></tr>
+        </thead>
+        <tbody>
+          {% for m in messages %}
+          <tr>
+            <td><strong>{{ m.id }}</strong></td>
+            <td><span class="pill pill-{{ m.outcome }}">{{ m.outcome }}</span></td>
+            <td><strong>{{ m.subject }}</strong></td>
+            <td style="font-size:0.82rem;color:var(--muted);white-space:pre-line;">{{ m.body }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:1.25rem;">No notifications sent to this vendor.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  {% elif active_tab == 'audit' %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Actor</th><th>Action</th><th>Transition</th><th>Detail</th></tr>
+        </thead>
+        <tbody>
+          {% for log in audit_rows %}
+          <tr>
+            <td>{{ log.id }}</td>
+            <td>{{ log.actor }} <span style="color:var(--muted);font-size:0.75rem;">({{ log.role }})</span></td>
+            <td><strong>{{ log.action }}</strong></td>
+            <td style="font-size:0.8rem;">{{ log.from_state or '—' }} &rarr; {{ log.to_state or '—' }}</td>
+            <td style="font-size:0.82rem;color:var(--muted);">{{ log.detail }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.25rem;">No audit entries for this vendor.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

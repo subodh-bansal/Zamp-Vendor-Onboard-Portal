@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Staff Login - Enterprise Portal</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body { display: flex; align-items: center; justify-content: center; height: 100vh; background: var(--bg); }
+    .login-card { width: 100%; max-width: 400px; padding: 2rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); }
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem; }
+    input { width: 100%; padding: 0.55rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 6px; }
+  </style>
+</head>
+<body>
+
+<div class="login-card">
+  <h2>Staff Sign In</h2>
+  <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1.25rem;">Internal console access requires staff credentials.</p>
+  
+  <form onsubmit="handleLogin(event)">
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="username" required />
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="password" required />
+    </div>
+    <div id="loginError" class="alert-error" style="display:none;"></div>
+    <button type="submit" class="btn" style="width:100%;margin-top:0.5rem;">Sign In</button>
+  </form>
+
+  <div style="margin-top:1.5rem;border-top:1px solid var(--border);padding-top:1rem;font-size:0.78rem;color:var(--text-muted);">
+    <strong>Demo Accounts:</strong><br>
+    • Analyst: <code>ravi</code> / <code>analyst123</code><br>
+    • Compliance: <code>anita</code> / <code>compliance123</code><br>
+    • Admin: <code>dev</code> / <code>admin123</code>
+  </div>
+</div>
+
+<script>
+  async function handleLogin(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const errBox = document.getElementById('loginError');
+    errBox.style.display = 'none';
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      if (res.ok) {
+        window.location.href = '/console';
+      } else {
+        const d = await res.json();
+        errBox.textContent = d.detail || 'Login failed.';
+        errBox.style.display = 'block';
+      }
+    } catch (err) {
+      errBox.textContent = 'Network error.';
+      errBox.style.display = 'block';
+    }
+  }
+</script>
+</body>
+</html>

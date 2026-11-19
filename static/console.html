@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Internal Compliance Console</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header>
+  <div class="brand">Enterprise Compliance Console</div>
+  <div class="user-info">
+    <span id="chainBadge" class="chain-badge" onclick="verifyChain()">Chain verified ✓</span>
+    <span id="userDisplay">Loading...</span>
+    <button class="btn btn-secondary" style="padding:0.3rem 0.6rem;font-size:0.78rem;" onclick="logout()">Log out</button>
+  </div>
+</header>
+
+<nav class="nav-tabs">
+  <button class="tab-btn active" onclick="switchTab('queue')">Work Queue (<span id="queueCount">0</span>)</button>
+  <button class="tab-btn" onclick="switchTab('vendors')">Vendor Master</button>
+  <button class="tab-btn" onclick="switchTab('outbox')">Email Outbox</button>
+  <button class="tab-btn" onclick="switchTab('audit')">Audit Ledger</button>
+  <button class="tab-btn" id="tabAdmin" style="display:none;" onclick="switchTab('admin')">Demo Tools</button>
+</nav>
+
+<main>
+  <!-- TAB 1: WORK QUEUE -->
+  <section id="view-queue" class="view active">
+    <div class="card">
+      <h2>Pending Compliance Work Queue</h2>
+      <p>Items requiring human review (vendors where automated fixes are complete but review flags or escalations remain).</p>
+      <div id="queueList" style="margin-top:1rem;display:flex;flex-direction:column;gap:1rem;"></div>
+      <div id="queueEmpty" style="display:none;text-align:center;padding:2rem;color:var(--text-muted);">Work queue is empty. All pending items are resolved.</div>
+    </div>
+  </section>
+
+  <!-- TAB 2: VENDORS -->
+  <section id="view-vendors" class="view">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.75rem;">
+        <h2>Master Vendor Directory</h2>
+        <div style="display:flex;gap:0.5rem;">
+          <input type="text" id="vendorSearch" placeholder="Search name, ID, GSTIN..." oninput="loadVendors()" />
+          <button class="btn" onclick="openInviteModal()">+ Invite Vendor</button>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Legal Name</th>
+            <th>Status / Substate</th>
+            <th>Risk Score</th>
+            <th>Category</th>
+            <th>Orders / Spend</th>
+          </tr>
+        </thead>
+        <tbody id="vendorTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- TAB 3: OUTBOX -->
+  <section id="view-outbox" class="view">
+    <div class="card">
+      <h2>Automated Email Outbox (Simulated SMTP)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Vendor ID</th>
+            <th>Recipient</th>
+            <th>Subject</th>
+            <th>Delivery</th>
+          </tr>
+        </thead>
+        <tbody id="outboxTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- TAB 4: AUDIT -->
+  <section id="view-audit" class="view">
+    <div class="card">
+      <h2>Immutable Hash-Chained Audit Ledger</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Timestamp</th>
+            <th>Actor (Role)</th>
+            <th>Action</th>
+            <th>Target</th>
+            <th>From → To</th>
+            <th>Remark</th>
+          </tr>
+        </thead>
+        <tbody id="auditTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- TAB 5: ADMIN DEMO TOOLS -->
+  <section id="view-admin" class="view">
+    <div class="card">
+      <h2>Admin Demo Tools</h2>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem;">
+        <button class="btn btn-danger" onclick="resetDemoData()">Reset & Re-seed Demo Database</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- INVITE MODAL -->
+<div id="inviteModal" class="modal-backdrop" onclick="closeInviteModal(event)">
+  <div class="drawer" style="max-width:450px;height:auto;border-radius:8px;margin:auto;" onclick="event.stopPropagation()">
+    <h3>Invite New Vendor</h3>
+    <form onsubmit="submitInvite(event)">
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label>Vendor Legal Name</label>
+        <input type="text" id="invName" required />
+      </div>
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label>Official Email</label>
+        <input type="email" id="invEmail" required />
+      </div>
+      <div class="form-group" style="margin-bottom:1rem;">
+        <label>Category</label>
+        <input type="text" id="invCat" value="Industrial components" required />
+      </div>
+      <div id="invResult" style="font-size:0.85rem;color:var(--green-text);margin-bottom:1rem;word-break:break-all;"></div>
+      <div style="display:flex;gap:0.5rem;">
+        <button type="submit" class="btn">Generate Invite Link</button>
+        <button type="button" class="btn btn-secondary" onclick="closeInviteModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- VENDOR DETAIL DRAWER -->
+<div id="drawerBackdrop" class="modal-backdrop" onclick="closeDrawer(event)">
+  <div class="drawer" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:0.75rem;margin-bottom:1rem;">
+      <h2 id="drawerTitle" style="margin:0;">Vendor Record</h2>
+      <button class="btn btn-secondary" onclick="closeDrawer()">Close ✕</button>
+    </div>
+    <div id="drawerContent"></div>
+  </div>
+</div>
+
+<script>
+  let currentUser = null;
+
+  async function initConsole() {
+    try {
+      const res = await fetch('/api/auth/me');
+      if (!res.ok) { window.location.href = '/login'; return; }
+      currentUser = await res.json();
+      document.getElementById('userDisplay').textContent = `${currentUser.display_name} (${currentUser.role})`;
+      if (currentUser.role === 'admin') {
+        document.getElementById('tabAdmin').style.display = 'inline-block';
+      }
+      loadQueue();
+      verifyChain();
+    } catch (e) {
+      window.location.href = '/login';
+    }
+  }
+
+  function switchTab(tab) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`view-${tab}`).classList.add('active');
+    event.target.classList.add('active');
+
+    if (tab === 'queue') loadQueue();
+    if (tab === 'vendors') loadVendors();
+    if (tab === 'outbox') loadOutbox();
+    if (tab === 'audit') loadAudit();
+  }
+
+  async function verifyChain() {
+    const res = await fetch('/api/audit/verify');
+    const data = await res.json();
+    const badge = document.getElementById('chainBadge');
+    if (data.ok) {
+      badge.className = 'chain-badge';
+      badge.textContent = `Chain verified ✓ (${data.count})`;
+    } else {
+      badge.className = 'chain-badge broken';
+      badge.textContent = `Chain broken ✗`;
+    }
+  }
+
+  async function loadQueue() {
+    const res = await fetch('/api/queue');
+    const items = await res.json();
+    document.getElementById('queueCount').textContent = items.length;
+    const list = document.getElementById('queueList');
+    const empty = document.getElementById('queueEmpty');
+
+    if (!items.length) {
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    list.innerHTML = items.map(v => {
+      const run = v.latest_run || {};
+      const checks = (run.decision && run.decision.checks) || [];
+      const reviews = checks.filter(c => c.status === 'review');
+      const rec = reviews.map(r => r.recommendation).filter(Boolean).join(' | ') || 'Review compliance evidence.';
+      
+      return `
+        <div class="card" style="margin:0;background:var(--surface-alt);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+            <strong>${escapeHtml(v.name)} (${v.vendor_id})</strong>
+            <span class="badge badge-pending">${v.substate} • Risk ${v.risk_score}</span>
+          </div>
+          <p style="font-size:0.85rem;margin-bottom:0.5rem;"><strong>Recommended Action:</strong> ${escapeHtml(rec)}</p>
+          <div style="margin-bottom:0.75rem;">
+            ${reviews.map(r => `<div style="font-size:0.82rem;">• <strong>${escapeHtml(r.label)}:</strong> ${escapeHtml(r.detail)}</div>`).join('')}
+          </div>
+          <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="remark-${v.vendor_id}" placeholder="Mandatory remark (min 10 chars)..." style="flex:1;min-width:250px;" />
+            <button class="btn" onclick="overrideVendor('${v.vendor_id}', 'approved')">Approve</button>
+            <button class="btn btn-danger" onclick="overrideVendor('${v.vendor_id}', 'rejected')">Reject</button>
+            <button class="btn btn-secondary" onclick="openVendorDetail('${v.vendor_id}')">Inspect Record</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function overrideVendor(vendorId, toStatus) {
+    const remark = document.getElementById(`remark-${vendorId}`).value;
+    try {
+      const res = await fetch(`/api/vendors/${vendorId}/override`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to_status: toStatus, remark })
+      });
+      if (res.ok) {
+        loadQueue();
+        verifyChain();
+      } else {
+        const d = await res.json();
+        alert(d.detail || 'Override failed.');
+      }
+    } catch (err) {
+      alert('Request error.');
+    }
+  }
+
+  async function loadVendors() {
+    const q = document.getElementById('vendorSearch').value;
+    const res = await fetch(`/api/vendors?q=${encodeURIComponent(q)}`);
+    const vendors = await res.json();
+    const tbody = document.getElementById('vendorTableBody');
+    tbody.innerHTML = vendors.map(v => `
+      <tr onclick="openVendorDetail('${v.vendor_id}')">
+        <td><strong>${escapeHtml(v.vendor_id)}</strong></td>
+        <td>${escapeHtml(v.name)}</td>
+        <td><span class="badge badge-${v.status}">${v.status} ${v.substate ? '(' + v.substate + ')' : ''}</span></td>
+        <td>${v.risk_score}</td>
+        <td>${escapeHtml(v.category || 'General')}</td>
+        <td>${v.orders_count} / ₹${Number(v.total_spend_inr || 0).toLocaleString('en-IN')}</td>
+      </tr>
+    `).join('');
+  }
+
+  async function loadOutbox() {
+    const res = await fetch('/api/outbox');
+    const rows = await res.json();
+    const tbody = document.getElementById('outboxTableBody');
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td>${new Date(r.ts * 1000).toLocaleString()}</td>
+        <td>${escapeHtml(r.vendor_id)}</td>
+        <td>${escapeHtml(r.to_email)}</td>
+        <td>${escapeHtml(r.subject)}</td>
+        <td><span class="badge badge-approved">${r.delivery}</span></td>
+      </tr>
+    `).join('');
+  }
+
+  async function loadAudit() {
+    const res = await fetch('/api/audit');
+    const rows = await res.json();
+    const tbody = document.getElementById('auditTableBody');
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td>${r.id}</td>
+        <td>${escapeHtml(r.ts)}</td>
+        <td>${escapeHtml(r.actor)} (${escapeHtml(r.role)})</td>
+        <td>${escapeHtml(r.action)}</td>
+        <td>${escapeHtml(r.target)}</td>
+        <td>${escapeHtml(r.from_status || '—')} → ${escapeHtml(r.to_status || '—')}</td>
+        <td>${escapeHtml(r.remark)}</td>
+      </tr>
+    `).join('');
+  }
+
+  function openInviteModal() { document.getElementById('inviteModal').classList.add('open'); }
+  function closeInviteModal(e) { if (!e || e.target.id === 'inviteModal') document.getElementById('inviteModal').classList.remove('open'); }
+
+  async function submitInvite(e) {
+    e.preventDefault();
+    const name = document.getElementById('invName').value;
+    const email = document.getElementById('invEmail').value;
+    const category = document.getElementById('invCat').value;
+
+    const res = await fetch('/api/invitations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, category })
+    });
+    const d = await res.json();
+    if (res.ok) {
+      document.getElementById('invResult').innerHTML = `Invite generated: <a href="${d.invite_link}" target="_blank">${d.invite_link}</a>`;
+    } else {
+      alert(d.detail || 'Invite failed.');
+    }
+  }
+
+  async function openVendorDetail(vendorId) {
+    document.getElementById('drawerBackdrop').classList.add('open');
+    const content = document.getElementById('drawerContent');
+    content.innerHTML = 'Loading...';
+
+    const res = await fetch(`/api/vendors/${vendorId}`);
+    const data = await res.json();
+    const v = data.vendor;
+    const audit = data.audit_timeline || [];
+
+    content.innerHTML = `
+      <h3>${escapeHtml(v.name)}</h3>
+      <p style="font-size:0.85rem;color:var(--text-muted);">GSTIN: ${v.gstin} • PAN: ${v.pan}</p>
+      <div style="margin:1rem 0;background:var(--surface-alt);padding:0.75rem;border-radius:6px;font-size:0.85rem;">
+        <div><strong>Status:</strong> ${v.status}</div>
+        <div><strong>Bank Account:</strong> ${escapeHtml(v.bank_account || '—')}</div>
+        <div><strong>IFSC:</strong> ${escapeHtml(v.ifsc || '—')}</div>
+      </div>
+      <h4>Audit Timeline</h4>
+      <div style="margin-top:0.5rem;display:flex;flex-direction:column;gap:0.5rem;font-size:0.82rem;">
+        ${audit.map(a => `<div>[${a.ts}] <strong>${escapeHtml(a.actor)}</strong> (${escapeHtml(a.action)}): ${escapeHtml(a.remark)}</div>`).join('')}
+      </div>
+    `;
+  }
+
+  function closeDrawer(e) {
+    if (!e || e.target.id === 'drawerBackdrop') document.getElementById('drawerBackdrop').classList.remove('open');
+  }
+
+  async function resetDemoData() {
+    if (!confirm('Wipe and re-seed database?')) return;
+    const res = await fetch('/api/admin/reset', { method: 'POST' });
+    if (res.ok) { alert('Reset complete.'); window.location.reload(); }
+  }
+
+  async function logout() {
+    await fetch('/api/auth/login', { method: 'POST' }); // or logout endpoint
+    window.location.href = '/login';
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  initConsole();
+</script>
+</body>
+</html>

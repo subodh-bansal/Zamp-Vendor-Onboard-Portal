@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enterprise Vendor Onboarding & Risk Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-alt: #f1f5f9;
+      --border: #cbd5e1;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --primary: #0d9488;
+      --primary-hover: #0f766e;
+      --primary-text: #ffffff;
+      --green-bg: #dcfce7;
+      --green-text: #166534;
+      --amber-bg: #fef3c7;
+      --amber-text: #92400e;
+      --red-bg: #fee2e2;
+      --red-text: #991b1b;
+      --blue-bg: #e0f2fe;
+      --blue-text: #075985;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08);
+      --focus-ring: 0 0 0 3px rgba(13, 148, 136, 0.35);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --surface: #1e293b;
+        --surface-alt: #334155;
+        --border: #475569;
+        --text: #f8fafc;
+        --text-muted: #94a3b8;
+        --primary: #14b8a6;
+        --primary-hover: #0d9488;
+        --primary-text: #042f2e;
+        --green-bg: #064e3b;
+        --green-text: #6ee7b7;
+        --amber-bg: #78350f;
+        --amber-text: #fcd34d;
+        --red-bg: #7f1d1d;
+        --red-text: #fca5a5;
+        --blue-bg: #0c4a6e;
+        --blue-text: #7dd3fc;
+        --shadow: 0 2px 6px rgba(0,0,0,0.4);
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    /* Header */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .brand h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .chain-badge {
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.3rem 0.65rem;
+      border-radius: 999px;
+      background: var(--green-bg);
+      color: var(--green-text);
+      cursor: pointer;
+    }
+    .chain-badge.broken {
+      background: var(--red-bg);
+      color: var(--red-text);
+    }
+    select, input[type="text"], textarea {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.45rem 0.7rem;
+      font-family: inherit;
+      font-size: 0.875rem;
+    }
+
+    /* Nav Tabs */
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0 1.5rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    /* Layout */
+    main {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1.25fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      box-shadow: var(--shadow);
+      margin-bottom: 1.25rem;
+    }
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+
+    .btn {
+      background: var(--primary);
+      color: var(--primary-text);
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .btn:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary {
+      background: var(--surface-alt);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover:not(:disabled) { background: var(--border); }
+    .btn-danger {
+      background: var(--red-bg);
+      color: var(--red-text);
+      border: 1px solid var(--red-text);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-approved, .tag-pass { background: var(--green-bg); color: var(--green-text); }
+    .badge-pending, .tag-fix { background: var(--amber-bg); color: var(--amber-text); }
+    .badge-rejected, .tag-fail { background: var(--red-bg); color: var(--red-text); }
+    .tag-review { background: var(--blue-bg); color: var(--blue-text); }
+
+    /* Pipeline Stages */
+    .stage-item {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.65rem;
+      background: var(--surface-alt);
+    }
+    .stage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .stage-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .stage-status.running { color: var(--primary); }
+    .stage-status.done { color: var(--green-text); }
+    .check-list {
+      margin-top: 0.6rem;
+      padding-top: 0.6rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+    }
+    .check-row .badge { flex-shrink: 0; margin-top: 0.1rem; }
+
+    /* Decision Box */
+    .decision-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .risk-meter {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+    .meter-bar {
+      width: 100px;
+      height: 8px;
+      background: var(--surface-alt);
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .meter-fill { height: 100%; background: var(--primary); transition: width 0.3s; }
+    .email-box {
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-family: monospace;
+      font-size: 0.8rem;
+      white-space: pre-wrap;
+      margin: 0.75rem 0;
+    }
+
+    /* Directory Table */
+    .filters-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.65rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: var(--surface-alt);
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+    }
+    tbody tr { cursor: pointer; }
+    tbody tr:hover { background: var(--surface-alt); }
+
+    /* Modal / Drawer */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      display: none;
+      justify-content: flex-end;
+      z-index: 50;
+    }
+    .modal-backdrop.open { display: flex; }
+    .drawer {
+      background: var(--surface);
+      width: 100%;
+      max-width: 680px;
+      height: 100%;
+      overflow-y: auto;
+      padding: 1.5rem;
+      border-left: 1px solid var(--border);
+      box-shadow: -4px 0 16px rgba(0,0,0,0.2);
+    }
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .kv-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      background: var(--surface-alt);
+      padding: 0.85rem;
+      border-radius: 6px;
+    }
+    .kv-item label {
+      display: block;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .kv-item span { font-size: 0.875rem; font-weight: 600; }
+
+    .timeline {
+      border-left: 2px solid var(--border);
+      margin-left: 0.5rem;
+      padding-left: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .tl-item { position: relative; font-size: 0.82rem; }
+    .tl-item::before {
+      content: "";
+      position: absolute;
+      left: -1.35rem;
+      top: 0.3rem;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+    }
+    .tl-meta { color: var(--text-muted); font-size: 0.75rem; }
+
+    .alert-error {
+      background: var(--red-bg);
+      color: var(--red-text);
+      padding: 0.65rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      margin-top: 0.65rem;
+      font-weight: 500;
+    }
+    .alert-banner {
+      background: var(--amber-bg);
+      color: var(--amber-text);
+      padding: 0.65rem 1rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      display: none;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>Enterprise Vendor Onboarding & Risk Portal</h1>
+  </div>
+  <div class="header-controls">
+    <span id="chainBadge" class="chain-badge" onclick="verifyChain()" title="Click to re-verify audit hash chain">
+      Chain verified ✓
+    </span>
+    <label for="roleSelect" style="font-size:0.8rem;font-weight:600;color:var(--text-muted)">Active Role:</label>
+    <select id="roleSelect" onchange="onRoleChange()">
+      <option value="analyst" data-actor="Ravi Menon">Ravi Menon (Analyst)</option>
+      <option value="compliance" data-actor="Anita Rao">Anita Rao (Compliance)</option>
+      <option value="admin" data-actor="Dev Patel">Dev Patel (Admin)</option>
+    </select>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" id="tabRunBtn" onclick="switchTab('run')">Onboarding Run</button>
+  <button class="tab-btn" id="tabDirBtn" onclick="switchTab('directory')">Master Vendor Directory</button>
+</nav>
+
+<main>
+  <div id="demoBanner" class="alert-banner"></div>
+
+  <!-- TAB 1: RUN -->
+  <section id="viewRun" class="view active">
+    <div class="grid-2">
+      <!-- Left: Submission Input -->
+      <div class="card">
+        <h2>Vendor Submission Payload</h2>
+        <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;">
+          <select id="sampleSelect" style="flex:1;min-width:200px;" onchange="loadSelectedSample()">
+            <option value="">-- Select a test scenario --</option>
+          </select>
+          <button class="btn btn-secondary" onclick="runDemoSequence()" id="btnDemoSeq">Run demo sequence</button>
+        </div>
+        <textarea id="jsonInput" rows="20" style="width:100%;font-family:monospace;font-size:0.8rem;" placeholder="Paste vendor JSON submission or pick a sample above..."></textarea>
+        <div id="runInputError" class="alert-error" style="display:none;"></div>
+        <div style="margin-top:0.85rem;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:0.78rem;color:var(--text-muted);">Deterministic rules engine • Regex OCR</span>
+          <button class="btn" id="btnRun" onclick="startOnboardingRun()">Run onboarding check</button>
+        </div>
+      </div>
+
+      <!-- Right: Live Pipeline & Decision -->
+      <div>
+        <div class="card">
+          <h2>Live Validation & Risk Pipeline</h2>
+          <div id="pipelineContainer">
+            <div class="stage-item" id="stage-Intake">
+              <div class="stage-header"><span>1. Intake & Resubmission Merge</span><span class="stage-status">waiting</span></div>
+              <div class="check-list" style="display:none;"></div>
+            </div>
+            <div class="stage-item" id="stage-Extraction">
+              <div class="stage-header"><span>2. Document Field Extraction</span><span class="stage-status">waiting</span></div>
+              <div class="check-list" style="display:none;"></div>
+            </div>
+            <div class="stage-item" id="stage-Format">
+              <div class="stage-header"><span>3. Tax & Banking Format Validation</span><span class="stage-status">waiting</span></div>
+              <div class="check-list" style="display:none;"></div>
+            </div>
+            <div class="stage-item" id="stage-Cross-reference">
+              <div class="stage-header"><span>4. Cross-Document & Fuzzy Name Check</span><span class="stage-status">waiting</span></div>
+              <div class="check-list" style="display:none;"></div>
+            </div>
+            <div class="stage-item" id="stage-Risk">
+              <div class="stage-header"><span>5. Sanctions, BEC & Longevity Risk</span><span class="stage-status">waiting</span></div>
+              <div class="check-list" style="display:none;"></div>
+            </div>
+            <div class="stage-item" id="stage-Decision">
+              <div class="stage-header"><span>6. Deterministic Policy Decision</span><span class="stage-status">waiting</span></div>
+              <div class="check-list" style="display:none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="decisionCard" style="display:none;">
+          <h2>Onboarding Outcome & Vendor Notice</h2>
+          <div class="decision-header">
+            <div>
+              <span id="decStatusBadge" class="badge"></span>
+              <span id="decMetaText" style="font-size:0.85rem;margin-left:0.5rem;color:var(--text-muted);"></span>
+            </div>
+            <div class="risk-meter">
+              <span>Risk Score: <strong id="decRiskVal">0</strong>/100</span>
+              <div class="meter-bar"><div class="meter-fill" id="decRiskBar"></div></div>
+            </div>
+          </div>
+          <div id="decEscalationBanner" class="alert-error" style="display:none;margin-bottom:0.75rem;">
+            ESCALATED: Vendor has reached Round 3 while still pending. Manual compliance intervention required.
+          </div>
+          <label style="font-size:0.8rem;font-weight:600;color:var(--text-muted);">Generated Vendor Communication (Internal fraud triggers masked):</label>
+          <div id="decEmailDraft" class="email-box"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+            <button class="btn btn-secondary" id="btnViewVendor" onclick="">Inspect Vendor Record →</button>
+            <button class="btn" id="btnSendNotice" onclick="markNoticeSent()">Approve & send notice</button>
+          </div>
+          <div id="sendNoticeFeedback" style="font-size:0.8rem;color:var(--green-text);margin-top:0.5rem;font-weight:600;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 2: DIRECTORY -->
+  <section id="viewDirectory" class="view">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
+        <h2>Master Vendor Directory</h2>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <button class="btn btn-secondary" onclick="exportCsv('vendors')">Export Vendors CSV</button>
+          <button class="btn btn-secondary" onclick="exportCsv('audit')">Export Audit CSV</button>
+          <button class="btn btn-danger" id="btnAdminReset" style="display:none;" onclick="resetDemoData()">Reset demo data</button>
+        </div>
+      </div>
+
+      <div class="filters-bar">
+        <input type="text" id="filterQ" placeholder="Search name, ID, GSTIN, PAN..." style="min-width:230px;" oninput="loadVendors()" />
+        <select id="filterStatus" onchange="loadVendors()">
+          <option value="">All Statuses</option>
+          <option value="approved">Approved</option>
+          <option value="pending">Pending</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <select id="filterTier" onchange="loadVendors()">
+          <option value="">All Risk Tiers</option>
+          <option value="low">Low Risk (0–19)</option>
+          <option value="medium">Medium Risk (20–39)</option>
+          <option value="high">High Risk (40+)</option>
+        </select>
+        <select id="filterCategory" onchange="loadVendors()">
+          <option value="">All Categories</option>
+          <option value="Industrial components">Industrial components</option>
+          <option value="Raw Materials">Raw Materials</option>
+          <option value="Logistics & Fleet">Logistics & Fleet</option>
+          <option value="IT & Hardware">IT & Hardware</option>
+          <option value="Packaging">Packaging</option>
+          <option value="General">General</option>
+        </select>
+        <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.85rem;cursor:pointer;">
+          <input type="checkbox" id="filterEscalated" onchange="loadVendors()" /> Escalated only
+        </label>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Vendor ID</th>
+              <th>Legal Name</th>
+              <th>Status</th>
+              <th>Risk Score</th>
+              <th>Category</th>
+              <th>Orders</th>
+              <th>Total Spend (INR)</th>
+              <th>Last Order</th>
+            </tr>
+          </thead>
+          <tbody id="vendorsTableBody"></tbody>
+        </table>
+      </div>
+      <div id="dirEmptyState" class="empty-state" style="display:none;">
+        No vendors match your current filter criteria. Try clearing search terms or resetting status filters.
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- VENDOR DETAIL DRAWER -->
+<div id="drawerBackdrop" class="modal-backdrop" onclick="closeDrawer(event)">
+  <div class="drawer" onclick="event.stopPropagation()">
+    <div class="drawer-header">
+      <div>
+        <h2 id="drawerTitle" style="margin:0;">Vendor Details</h2>
+        <span id="drawerSub" style="font-size:0.8rem;color:var(--text-muted);"></span>
+      </div>
+      <button class="btn btn-secondary" onclick="closeDrawer()">Close ✕</button>
+    </div>
+
+    <div id="drawerContent"></div>
+  </div>
+</div>
+
+<script>
+  let samplesMap = {};
+  let currentRunId = null;
+  let currentVendorId = null;
+  let activeDrawerVendorId = null;
+
+  function getRole() {
+    return document.getElementById('roleSelect').value;
+  }
+
+  function getActorName() {
+    const sel = document.getElementById('roleSelect');
+    return sel.options[sel.selectedIndex].getAttribute('data-actor');
+  }
+
+  async function apiFetch(url, opts = {}) {
+    opts.headers = Object.assign({}, opts.headers, { 'X-Role': getRole() });
+    return fetch(url, opts);
+  }
+
+  function onRoleChange() {
+    const role = getRole();
+    document.getElementById('btnAdminReset').style.display = (role === 'admin') ? 'inline-flex' : 'none';
+    if (document.getElementById('viewDirectory').classList.contains('active')) {
+      loadVendors();
+    }
+    if (activeDrawerVendorId) {
+      openVendorDetail(activeDrawerVendorId);
+    }
+  }
+
+  function switchTab(tab) {
+    document.getElementById('tabRunBtn').classList.toggle('active', tab === 'run');
+    document.getElementById('tabDirBtn').classList.toggle('active', tab === 'directory');
+    document.getElementById('viewRun').classList.toggle('active', tab === 'run');
+    document.getElementById('viewDirectory').classList.toggle('active', tab === 'directory');
+    if (tab === 'directory') loadVendors();
+  }
+
+  async function verifyChain() {
+    try {
+      const res = await apiFetch('/api/audit/verify');
+      const data = await res.json();
+      const badge = document.getElementById('chainBadge');
+      if (data.ok) {
+        badge.className = 'chain-badge';
+        badge.textContent = `Chain verified ✓ (${data.count} blocks)`;
+      } else {
+        badge.className = 'chain-badge broken';
+        badge.textContent = `Chain broken ✗ (at #${data.broken_at})`;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function initSamples() {
+    const res = await apiFetch('/api/samples');
+    samplesMap = await res.json();
+    const sel = document.getElementById('sampleSelect');
+    Object.keys(samplesMap).forEach(key => {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = key;
+      sel.appendChild(opt);
+    });
+    const firstKey = Object.keys(samplesMap)[0];
+    if (firstKey) {
+      sel.value = firstKey;
+      loadSelectedSample();
+    }
+  }
+
+  function loadSelectedSample() {
+    const key = document.getElementById('sampleSelect').value;
+    if (key && samplesMap[key]) {
+      document.getElementById('jsonInput').value = JSON.stringify(samplesMap[key], null, 2);
+      document.getElementById('runInputError').style.display = 'none';
+    }
+  }
+
+  function resetPipelineUI() {
+    const stages = ['Intake', 'Extraction', 'Format', 'Cross-reference', 'Risk', 'Decision'];
+    stages.forEach(s => {
+      const el = document.getElementById(`stage-${s}`);
+      el.querySelector('.stage-status').textContent = 'waiting';
+      el.querySelector('.stage-status').className = 'stage-status';
+      const cl = el.querySelector('.check-list');
+      cl.innerHTML = '';
+      cl.style.display = 'none';
+    });
+    document.getElementById('decisionCard').style.display = 'none';
+    document.getElementById('sendNoticeFeedback').textContent = '';
+  }
+
+  function startOnboardingRun() {
+    return new Promise(async (resolve) => {
+      const errBox = document.getElementById('runInputError');
+      errBox.style.display = 'none';
+
+      let payload;
+      try {
+        payload = JSON.parse(document.getElementById('jsonInput').value);
+      } catch (e) {
+        errBox.textContent = 'Invalid JSON payload. Please fix syntax errors before running.';
+        errBox.style.display = 'block';
+        resolve(false);
+        return;
+      }
+
+      resetPipelineUI();
+      const btnRun = document.getElementById('btnRun');
+      btnRun.disabled = true;
+
+      try {
+        const postRes = await apiFetch('/api/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const initInfo = await postRes.json();
+        currentRunId = initInfo.run_id;
+        currentVendorId = initInfo.vendor_id;
+
+        const streamUrl = `/api/stream/${currentRunId}?sub_json=${encodeURIComponent(JSON.stringify(payload))}`;
+        const evtSource = new EventSource(streamUrl);
+
+        evtSource.onmessage = (e) => {
+          const msg = JSON.parse(e.data);
+          if (msg.type === 'start') {
+            const stEl = document.getElementById(`stage-${msg.stage}`);
+            if (stEl) {
+              const badge = stEl.querySelector('.stage-status');
+              badge.textContent = 'running...';
+              badge.className = 'stage-status running';
+            }
+          } else if (msg.type === 'stage') {
+            const stEl = document.getElementById(`stage-${msg.stage}`);
+            if (stEl) {
+              const badge = stEl.querySelector('.stage-status');
+              badge.textContent = 'done';
+              badge.className = 'stage-status done';
+              if (msg.checks && msg.checks.length > 0) {
+                const cl = stEl.querySelector('.check-list');
+                cl.style.display = 'flex';
+                cl.innerHTML = msg.checks.map(c => `
+                  <div class="check-row">
+                    <span class="badge tag-${c.status}">${c.status}</span>
+                    <div><strong>${escapeHtml(c.label)}:</strong> ${escapeHtml(c.detail)}</div>
+                  </div>
+                `).join('');
+              }
+            }
+          } else if (msg.type === 'done') {
+            evtSource.close();
+            btnRun.disabled = false;
+            renderDecisionCard(msg);
+            verifyChain();
+            resolve(true);
+          }
+        };
+
+        evtSource.onerror = () => {
+          evtSource.close();
+          btnRun.disabled = false;
+          errBox.textContent = 'Stream connection interrupted. Check backend server logs.';
+          errBox.style.display = 'block';
+          resolve(false);
+        };
+      } catch (err) {
+        btnRun.disabled = false;
+        errBox.textContent = 'Failed to start onboarding run: ' + err.message;
+        errBox.style.display = 'block';
+        resolve(false);
+      }
+    });
+  }
+
+  function renderDecisionCard(doneMsg) {
+    const dec = doneMsg.decision;
+    const card = document.getElementById('decisionCard');
+    card.style.display = 'block';
+
+    const stBadge = document.getElementById('decStatusBadge');
+    stBadge.className = `badge badge-${dec.status}`;
+    stBadge.textContent = dec.status;
+
+    document.getElementById('decMetaText').textContent = `Vendor ${doneMsg.vendor_id} • Round ${doneMsg.round} • Run ${doneMsg.run_id}`;
+    document.getElementById('decRiskVal').textContent = dec.risk_score;
+    const bar = document.getElementById('decRiskBar');
+    bar.style.width = `${dec.risk_score}%`;
+    bar.style.background = dec.risk_score >= 40 ? 'var(--red-text)' : (dec.risk_score >= 20 ? 'var(--amber-text)' : 'var(--primary)');
+
+    const escBanner = document.getElementById('decEscalationBanner');
+    escBanner.style.display = (dec.status === 'pending' && doneMsg.round >= 3) ? 'block' : 'none';
+
+    document.getElementById('decEmailDraft').textContent = dec.email_draft;
+    document.getElementById('btnViewVendor').onclick = () => openVendorDetail(doneMsg.vendor_id);
+  }
+
+  async function markNoticeSent() {
+    if (!currentRunId) return;
+    const res = await apiFetch(`/api/runs/${currentRunId}/send`, { method: 'POST' });
+    if (res.ok) {
+      document.getElementById('sendNoticeFeedback').textContent = '✓ Vendor notice logged as sent in audit trail.';
+      verifyChain();
+    }
+  }
+
+  async function runDemoSequence() {
+    const keys = Object.keys(samplesMap);
+    // Order: 1, 2, 3, 4, 6, 5a, 5b, 5c, 7
+    const orderPrefixes = ['1.', '2.', '3.', '4.', '6.', '5a.', '5b.', '5c.', '7.'];
+    const sequence = orderPrefixes.map(p => keys.find(k => k.startsWith(p))).filter(Boolean);
+
+    const banner = document.getElementById('demoBanner');
+    const btnSeq = document.getElementById('btnDemoSeq');
+    btnSeq.disabled = true;
+    banner.style.display = 'block';
+
+    for (let i = 0; i < sequence.length; i++) {
+      const k = sequence[i];
+      banner.textContent = `Demo sequence running (${i + 1}/${sequence.length}): ${k}...`;
+      document.getElementById('sampleSelect').value = k;
+      loadSelectedSample();
+      await startOnboardingRun();
+      await new Promise(r => setTimeout(r, 400));
+    }
+
+    banner.textContent = 'Demo sequence complete! Switched to Master Vendor Directory.';
+    btnSeq.disabled = false;
+    switchTab('directory');
+    setTimeout(() => { banner.style.display = 'none'; }, 4000);
+  }
+
+  async function loadVendors() {
+    const q = document.getElementById('filterQ').value.trim();
+    const status = document.getElementById('filterStatus').value;
+    const tier = document.getElementById('filterTier').value;
+    const category = document.getElementById('filterCategory').value;
+    const escalated = document.getElementById('filterEscalated').checked ? '1' : '';
+
+    const params = new URLSearchParams();
+    if (q) params.append('q', q);
+    if (status) params.append('status', status);
+    if (tier) params.append('tier', tier);
+    if (category) params.append('category', category);
+    if (escalated) params.append('escalated', escalated);
+
+    const res = await apiFetch(`/api/vendors?${params.toString()}`);
+    const vendors = await res.json();
+
+    const tbody = document.getElementById('vendorsTableBody');
+    const empty = document.getElementById('dirEmptyState');
+
+    if (!vendors || vendors.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+
+    empty.style.display = 'none';
+    tbody.innerHTML = vendors.map(v => `
+      <tr onclick="openVendorDetail('${v.vendor_id}')">
+        <td><strong>${escapeHtml(v.vendor_id)}</strong></td>
+        <td>
+          ${escapeHtml(v.name)}
+          ${v.escalated ? '<span class="badge badge-rejected" style="margin-left:0.35rem;">Escalated</span>' : ''}
+        </td>
+        <td><span class="badge badge-${v.status}">${v.status}</span></td>
+        <td><strong>${v.risk_score}</strong>/100</td>
+        <td>${escapeHtml(v.category || 'General')}</td>
+        <td>${v.orders_count}</td>
+        <td>₹${Number(v.total_spend_inr || 0).toLocaleString('en-IN')}</td>
+        <td>${escapeHtml(v.last_order_date || '—')}</td>
+      </tr>
+    `).join('');
+  }
+
+  async function openVendorDetail(vendorId) {
+    activeDrawerVendorId = vendorId;
+    const backdrop = document.getElementById('drawerBackdrop');
+    const content = document.getElementById('drawerContent');
+    backdrop.classList.add('open');
+    content.innerHTML = '<div class="empty-state">Loading vendor record & audit trail...</div>';
+
+    const res = await apiFetch(`/api/vendors/${vendorId}`);
+    if (!res.ok) {
+      content.innerHTML = '<div class="alert-error">Failed to load vendor details.</div>';
+      return;
+    }
+    const data = await res.json();
+    const v = data.vendor;
+    const runs = data.runs || [];
+    const audit = data.audit_timeline || [];
+
+    document.getElementById('drawerTitle').textContent = `${v.name} (${v.vendor_id})`;
+    document.getElementById('drawerSub').textContent = `GSTIN: ${v.gstin} • PAN: ${v.pan} • State: ${v.address_state}`;
+
+    let overrideHtml = '';
+    if (v.status === 'pending') {
+      overrideHtml = `
+        <div class="card" style="background:var(--surface-alt);">
+          <h3 style="font-size:0.95rem;margin-bottom:0.5rem;">Human-in-the-Loop Override</h3>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">
+            Acting as <strong>${escapeHtml(getActorName())}</strong> (${getRole()}). Server enforces clearance rules.
+          </p>
+          <div style="display:flex;gap:0.5rem;margin-bottom:0.6rem;">
+            <select id="overrideTarget" style="flex:1;">
+              <option value="approved">Approve Vendor</option>
+              <option value="rejected">Reject Vendor</option>
+            </select>
+          </div>
+          <textarea id="overrideRemark" rows="3" style="width:100%;margin-bottom:0.6rem;" placeholder="Enter mandatory compliance/review remark (min 10 characters)..."></textarea>
+          <button class="btn" onclick="submitOverride('${v.vendor_id}')">Commit Override Decision</button>
+          <div id="overrideError" class="alert-error" style="display:none;"></div>
+        </div>
+      `;
+    }
+
+    const roundsHtml = runs.length === 0
+      ? '<p style="font-size:0.85rem;color:var(--text-muted);">Seeded historical vendor (no onboarding runs recorded).</p>'
+      : runs.map(r => {
+          const rData = JSON.parse(r.data);
+          const checks = (rData.decision && rData.decision.checks) || [];
+          const flags = checks.filter(c => c.status !== 'pass');
+          return `
+            <div class="stage-item" style="margin-bottom:0.5rem;">
+              <div class="stage-header">
+                <span>Round ${r.round} (${r.id})</span>
+                <span class="badge badge-${r.status}">${r.status} • Risk ${r.risk_score}</span>
+              </div>
+              <div style="font-size:0.8rem;margin-top:0.4rem;">
+                ${flags.length === 0 ? 'All validation and risk checks passed.' : flags.map(f => `<div><span class="badge tag-${f.status}">${f.status}</span> ${escapeHtml(f.detail)}</div>`).join('')}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+    const timelineHtml = audit.map(a => `
+      <div class="tl-item">
+        <div class="tl-meta">${escapeHtml(a.ts)} • <strong>${escapeHtml(a.actor)}</strong> (${escapeHtml(a.role)})</div>
+        <div><strong>${escapeHtml(a.action)}</strong> on <em>${escapeHtml(a.target)}</em> ${a.from_status || a.to_status ? `(${a.from_status || 'none'} → ${a.to_status || 'none'})` : ''}</div>
+        <div style="color:var(--text-muted);margin-top:0.15rem;">"${escapeHtml(a.remark)}"</div>
+      </div>
+    `).join('');
+
+    content.innerHTML = `
+      <div class="kv-grid">
+        <div class="kv-item"><label>Status</label><span class="badge badge-${v.status}">${v.status}</span></div>
+        <div class="kv-item"><label>Risk Score</label><span>${v.risk_score} / 100</span></div>
+        <div class="kv-item"><label>Bank Account</label><span>${escapeHtml(v.bank_account || '—')}</span></div>
+        <div class="kv-item"><label>IFSC</label><span>${escapeHtml(v.ifsc || '—')}</span></div>
+        <div class="kv-item"><label>Category</label><span>${escapeHtml(v.category || 'General')}</span></div>
+        <div class="kv-item"><label>Orders / Spend</label><span>${v.orders_count} orders • ₹${Number(v.total_spend_inr || 0).toLocaleString('en-IN')}</span></div>
+      </div>
+
+      ${overrideHtml}
+
+      <h3 style="font-size:0.95rem;margin:1rem 0 0.5rem;">Submission Rounds</h3>
+      ${roundsHtml}
+
+      <h3 style="font-size:0.95rem;margin:1.25rem 0 0.65rem;">Immutable Audit Timeline</h3>
+      <div class="timeline">${timelineHtml}</div>
+    `;
+  }
+
+  async function submitOverride(vendorId) {
+    const toStatus = document.getElementById('overrideTarget').value;
+    const remark = document.getElementById('overrideRemark').value;
+    const errBox = document.getElementById('overrideError');
+    errBox.style.display = 'none';
+
+    const res = await apiFetch(`/api/vendors/${vendorId}/override`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        actor: getActorName(),
+        to_status: toStatus,
+        remark: remark
+      })
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({ detail: 'Override rejected by server.' }));
+      errBox.textContent = errData.detail || 'Override rejected.';
+      errBox.style.display = 'block';
+      return;
+    }
+
+    verifyChain();
+    loadVendors();
+    openVendorDetail(vendorId);
+  }
+
+  function closeDrawer(e) {
+    if (!e || e.target.id === 'drawerBackdrop') {
+      document.getElementById('drawerBackdrop').classList.remove('open');
+      activeDrawerVendorId = null;
+    }
+  }
+
+  async function exportCsv(type) {
+    let url = type === 'vendors' ? '/api/export/vendors.csv' : '/api/export/audit.csv';
+    if (type === 'vendors') {
+      const params = new URLSearchParams();
+      const q = document.getElementById('filterQ').value.trim();
+      const status = document.getElementById('filterStatus').value;
+      const tier = document.getElementById('filterTier').value;
+      const category = document.getElementById('filterCategory').value;
+      const escalated = document.getElementById('filterEscalated').checked ? '1' : '';
+      if (q) params.append('q', q);
+      if (status) params.append('status', status);
+      if (tier) params.append('tier', tier);
+      if (category) params.append('category', category);
+      if (escalated) params.append('escalated', escalated);
+      const qs = params.toString();
+      if (qs) url += `?${qs}`;
+    }
+
+    const res = await apiFetch(url);
+    const blob = await res.blob();
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = type === 'vendors' ? 'vendors_export.csv' : 'audit_export.csv';
+    link.click();
+  }
+
+  async function resetDemoData() {
+    if (!confirm('WARNING: This will wipe all runs, overrides, and audit logs, restoring the 5 seeded vendors. Continue?')) {
+      return;
+    }
+    const res = await apiFetch('/api/admin/reset', { method: 'POST' });
+    if (res.ok) {
+      verifyChain();
+      loadVendors();
+      alert('Demo database reset and re-seeded.');
+    } else {
+      const err = await res.json();
+      alert(err.detail || 'Reset failed.');
+    }
+  }
+
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // Bootstrap
+  initSamples();
+  verifyChain();
+  onRoleChange();
+</script>
+</body>
+</html>
